@@ -41,11 +41,11 @@ export function OSStockMaterialDialog({ open, onOpenChange, orderId, onAdded }: 
     const fetchStock = async () => {
       setLoading(true);
 
-      const itemsRes = await apiFetch(`/api/data/stock-items/?condo_id=${condoId}&deleted_at__isnull=true&ordering=name`);
+      const itemsRes = await apiFetch(`/api/itens-estoque/?condominio_id=${condoId}&deleted_at__isnull=true&ordering=name`);
       const itemsJson = await itemsRes.json();
       const stockItems: any[] = itemsJson.results ?? itemsJson ?? [];
 
-      const balancesRes = await apiFetch(`/api/data/stock-items/balances/?condo_id=${condoId}`);
+      const balancesRes = await apiFetch(`/api/itens-estoque/saldos/?condominio_id=${condoId}`);
       const balancesJson = await balancesRes.json();
       const balances: any[] = balancesJson.results ?? balancesJson ?? [];
 
@@ -86,7 +86,7 @@ export function OSStockMaterialDialog({ open, onOpenChange, orderId, onAdded }: 
 
     try {
       // 1. Insert material into service_order_materials and get the ID back
-      const matRes = await apiFetch('/api/data/service-order-materials/', {
+      const matRes = await apiFetch('/api/materiais-os/', {
         method: 'POST',
         body: JSON.stringify({
           service_order_id: orderId,
@@ -107,7 +107,7 @@ export function OSStockMaterialDialog({ open, onOpenChange, orderId, onAdded }: 
       const matData = await matRes.json();
 
       // 2. Deduct from stock via stock_movements, linking to the order
-      const moveRes = await apiFetch('/api/data/stock-movements/', {
+      const moveRes = await apiFetch('/api/movimentacoes-estoque/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -121,7 +121,7 @@ export function OSStockMaterialDialog({ open, onOpenChange, orderId, onAdded }: 
 
       if (!moveRes.ok) {
         // Rollback: remove the material if stock deduction failed
-        await apiFetch(`/api/data/service-order-materials/${matData.id}/`, { method: 'DELETE' });
+        await apiFetch(`/api/materiais-os/${matData.id}/`, { method: 'DELETE' });
         const moveErr = await moveRes.json().catch(() => ({}));
         toast({ title: 'Erro na baixa do estoque', description: moveErr.message ?? moveErr.detail ?? '', variant: 'destructive' });
         setSaving(false);

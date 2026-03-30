@@ -24,7 +24,7 @@ export default function InviteLinkDialog({ open, onOpenChange, condoId }: Invite
   const fetchCurrent = async () => {
     setLoading(true);
     try {
-      const condoRes = await apiFetch(`/api/data/condos/${condoId}/`);
+      const condoRes = await apiFetch(`/api/condominios/${condoId}/`);
       if (condoRes.ok) {
         const data = await condoRes.json();
         setInviteCode(data.invite_code ?? null);

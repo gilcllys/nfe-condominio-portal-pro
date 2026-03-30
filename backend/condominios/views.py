@@ -202,6 +202,44 @@ class CondominioViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         except Condominio.DoesNotExist:
             return Response(None)
 
+    @action(detail=False, methods=["get"], url_path="dashboard-stats")
+    def dashboard_stats(self, request):
+        """GET /api/condominios/dashboard-stats/?condominio_id=... — stats do dashboard."""
+        condominio_id = request.query_params.get("condominio_id")
+        if not condominio_id:
+            return Response(
+                {"nfs_pendentes": 0, "aprovacoes_pendentes": 0, "budget_total": 0, "budget_used": 0}
+            )
+
+        from fiscal.models import DocumentoFiscal
+        from ordens.models import OrdemServico
+
+        nfs_pendentes = DocumentoFiscal.objects.filter(
+            condominio_id=condominio_id, status="PENDENTE"
+        ).count()
+
+        aprovacoes_pendentes = OrdemServico.objects.filter(
+            condominio_id=condominio_id, status="AGUARDANDO_APROVACAO"
+        ).count()
+
+        # Orcamento mensal
+        budget_total = 0
+        budget_used = 0
+        try:
+            cfg = ConfiguracaoFinanceira.objects.get(condominio_id=condominio_id)
+            budget_total = float(cfg.orcamento_mensal or 0)
+        except ConfiguracaoFinanceira.DoesNotExist:
+            pass
+
+        return Response(
+            {
+                "nfs_pendentes": nfs_pendentes,
+                "aprovacoes_pendentes": aprovacoes_pendentes,
+                "budget_total": budget_total,
+                "budget_used": budget_used,
+            }
+        )
+
 
 class MembroCondominioViewSet(
     mixins.ListModelMixin,

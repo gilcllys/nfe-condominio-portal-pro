@@ -28,7 +28,7 @@ export default function JoinCondoSection() {
 
     try {
       // Validate invite code
-      const condoRes = await apiFetch(`/api/data/condos/validate-invite/?code=${encodeURIComponent(inviteCode)}`);
+      const condoRes = await apiFetch(`/api/condominios/validar-convite/?code=${encodeURIComponent(inviteCode)}`);
       const condo = await condoRes.json();
 
       if (!condo || !condo.id) {
@@ -38,7 +38,7 @@ export default function JoinCondoSection() {
       }
 
       // Get user id from nfe_vigia.users
-      const userRes = await apiFetch(`/api/data/users/by-auth-id/?auth_user_id=${user.id}`);
+      const userRes = await apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`);
       const userRow = await userRes.json();
 
       if (!userRow || !userRow.id) {
@@ -48,7 +48,7 @@ export default function JoinCondoSection() {
       }
 
       // Check if already linked
-      const existingRes = await apiFetch(`/api/data/user-condos/?user_id=${userRow.id}&condo_id=${condo.id}`);
+      const existingRes = await apiFetch(`/api/membros/?user_id=${userRow.id}&condominio_id=${condo.id}`);
       const existingData = await existingRes.json();
       const existingList = Array.isArray(existingData) ? existingData : existingData?.results ?? [];
 
@@ -59,7 +59,7 @@ export default function JoinCondoSection() {
       }
 
       // Create pending user_condos entry
-      const createRes = await apiFetch('/api/data/user-condos/', {
+      const createRes = await apiFetch('/api/membros/', {
         method: 'POST',
         body: JSON.stringify({
           user_id: userRow.id,

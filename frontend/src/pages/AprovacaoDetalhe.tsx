@@ -71,7 +71,7 @@ export default function AprovacaoDetalhe() {
 
     const fetchUserInfo = async () => {
       // Fetch internal user id
-      const userRes = await apiFetch(`/api/data/users/?auth_user_id=${user.id}`);
+      const userRes = await apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`);
       if (!userRes.ok) return;
       const userData = await userRes.json();
       const userList = Array.isArray(userData) ? userData : userData.results ?? [];
@@ -80,7 +80,7 @@ export default function AprovacaoDetalhe() {
 
       // Fetch role from user_condos scoped to the active condo
       if (userId) {
-        const ucRes = await apiFetch(`/api/data/user-condos/?user_id=${userId}&condo_id=${condoId}`);
+        const ucRes = await apiFetch(`/api/membros/?user_id=${userId}&condominio_id=${condoId}`);
         if (ucRes.ok) {
           const ucData = await ucRes.json();
           const ucList = Array.isArray(ucData) ? ucData : ucData.results ?? [];
@@ -99,8 +99,8 @@ export default function AprovacaoDetalhe() {
     const fetchAll = async () => {
       setLoading(true);
       const [docRes, votesRes] = await Promise.all([
-        apiFetch(`/api/data/fiscal-documents/${id}/`),
-        apiFetch(`/api/data/approvals/?fiscal_document_id=${id}&ordering=voted_at`),
+        apiFetch(`/api/documentos-fiscais/${id}/`),
+        apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${id}&ordering=voted_at`),
       ]);
 
       if (docRes.ok) {
@@ -199,8 +199,8 @@ export default function AprovacaoDetalhe() {
 
     try {
       const res = existingPendingVote
-        ? await apiFetch(`/api/data/approvals/${existingPendingVote.id}/`, { method: 'PATCH', body: JSON.stringify(votePayload) })
-        : await apiFetch('/api/data/approvals/', { method: 'POST', body: JSON.stringify(votePayload) });
+        ? await apiFetch(`/api/aprovacoes-doc-fiscal/${existingPendingVote.id}/`, { method: 'PATCH', body: JSON.stringify(votePayload) })
+        : await apiFetch('/api/aprovacoes-doc-fiscal/', { method: 'POST', body: JSON.stringify(votePayload) });
 
       if (!res.ok) {
         toast.error('Erro ao registrar decisão.');
@@ -209,24 +209,24 @@ export default function AprovacaoDetalhe() {
       }
 
       // Check if all required votes are in to auto-update status
-      const allVotesRes = await apiFetch(`/api/data/approvals/?fiscal_document_id=${id}`);
+      const allVotesRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${id}`);
       const allVotesData = allVotesRes.ok ? await allVotesRes.json() : [];
       const allVotes = Array.isArray(allVotesData) ? allVotesData : allVotesData.results ?? [];
 
       if (decision === 'rejeitado') {
-        await apiFetch(`/api/data/fiscal-documents/${id}/`, {
+        await apiFetch(`/api/documentos-fiscais/${id}/`, {
           method: 'PATCH',
           body: JSON.stringify({ status: 'CANCELADO' }),
         });
 
         // Reverse any ENTRADA stock movements linked to this NF (safety net)
-        const movementsRes = await apiFetch(`/api/data/stock-movements/?fiscal_document_id=${id}&move_type=ENTRADA`);
+        const movementsRes = await apiFetch(`/api/movimentacoes-estoque/?fiscal_document_id=${id}&move_type=ENTRADA`);
         const movementsData = movementsRes.ok ? await movementsRes.json() : [];
         const existingMovements = Array.isArray(movementsData) ? movementsData : movementsData.results ?? [];
 
         if (existingMovements.length > 0) {
           for (const mv of existingMovements) {
-            await apiFetch('/api/data/stock-movements/', {
+            await apiFetch('/api/movimentacoes-estoque/', {
               method: 'POST',
               body: JSON.stringify({
                 condo_id: condoId,
@@ -245,19 +245,19 @@ export default function AprovacaoDetalhe() {
           (allVotes as any[]).some(v => v.approver_role === r && v.decision === 'aprovado')
         );
         if (allApproved) {
-          await apiFetch(`/api/data/fiscal-documents/${id}/`, {
+          await apiFetch(`/api/documentos-fiscais/${id}/`, {
             method: 'PATCH',
             body: JSON.stringify({ status: 'PROCESSADO' }),
           });
 
           // Create ENTRADA stock movements for each item linked to this NF
-          const nfItemsRes = await apiFetch(`/api/data/fiscal-documents/${id}/items/`);
+          const nfItemsRes = await apiFetch(`/api/documentos-fiscais/${id}/items/`);
           const nfItemsData = nfItemsRes.ok ? await nfItemsRes.json() : [];
           const nfItems = Array.isArray(nfItemsData) ? nfItemsData : nfItemsData.results ?? [];
 
           if (nfItems.length > 0) {
             for (const item of nfItems) {
-              await apiFetch('/api/data/stock-movements/', {
+              await apiFetch('/api/movimentacoes-estoque/', {
                 method: 'POST',
                 body: JSON.stringify({
                   condo_id: condoId,

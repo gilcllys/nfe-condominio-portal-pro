@@ -92,7 +92,7 @@ export default function Moradores() {
     if (!condoId) return;
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/data/residents/with-user-match/?condo_id=${condoId}`);
+      const res = await apiFetch(`/api/moradores/?condominio_id=${condoId}`);
       if (!res.ok) throw new Error('Erro ao carregar moradores');
       const data = await res.json();
       setResidents((Array.isArray(data) ? data : data.results ?? []) as ResidentRow[]);
@@ -129,7 +129,7 @@ export default function Moradores() {
 
     if (editingResident) {
       try {
-        const res = await apiFetch(`/api/data/residents/${editingResident.resident_id}/`, {
+        const res = await apiFetch(`/api/moradores/${editingResident.resident_id}/`, {
           method: 'PATCH',
           body: JSON.stringify(payload),
         });
@@ -141,7 +141,7 @@ export default function Moradores() {
       }
     } else {
       try {
-        const res = await apiFetch('/api/data/residents/', {
+        const res = await apiFetch('/api/moradores/', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
@@ -159,7 +159,7 @@ export default function Moradores() {
   const handleDelete = async () => {
     if (!deletingResident || !condoId) return;
     try {
-      const res = await apiFetch(`/api/data/residents/${deletingResident.resident_id}/`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/moradores/${deletingResident.resident_id}/`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Erro ao excluir morador');
       await logActivity({ condoId, action: 'delete', entity: 'resident', entityId: deletingResident.resident_id, description: `Morador "${deletingResident.full_name}" excluído` });
       toast({ title: 'Morador excluído com sucesso' }); fetchResidents();

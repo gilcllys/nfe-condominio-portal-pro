@@ -38,7 +38,7 @@ export function DashboardActivities() {
       setLoading(true);
 
       try {
-        const res = await apiFetch(`/api/data/approvals/?condo_id=${condoId}&ordering=-voted_at&limit=10`);
+        const res = await apiFetch(`/api/aprovacoes-doc-fiscal/?condominio_id=${condoId}&ordering=-voted_at&limit=10`);
         const data = await res.json();
         const rows = Array.isArray(data) ? data : data?.results ?? [];
 

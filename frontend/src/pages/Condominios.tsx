@@ -96,7 +96,7 @@ export default function Condominios() {
   const fetchCondos = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch('/api/data/condos/my/');
+      const res = await apiFetch('/api/condominios/meus/');
       if (!res.ok) throw new Error('Erro ao carregar condomínios');
       const data = await res.json();
       setCondos((Array.isArray(data) ? data : data.results ?? []) as CondoItem[]);
@@ -119,7 +119,7 @@ export default function Condominios() {
     }
     setCreating(true);
     try {
-      const res = await apiFetch('/api/data/condos/onboard/', {
+      const res = await apiFetch('/api/condominios/criar/', {
         method: 'POST',
         body: JSON.stringify({
           p_name: createForm.name.trim(),
@@ -156,7 +156,7 @@ export default function Condominios() {
     }
     setSaving(true);
     try {
-      const res = await apiFetch(`/api/data/condos/${editingCondo.condo_id}/`, {
+      const res = await apiFetch(`/api/condominios/${editingCondo.condo_id}/`, {
         method: 'PATCH',
         body: JSON.stringify({ name: editForm.name.trim() }),
       });

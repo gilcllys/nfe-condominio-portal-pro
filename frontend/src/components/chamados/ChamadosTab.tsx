@@ -92,7 +92,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
   // Get internal user id
   useEffect(() => {
     if (!user) return;
-    apiFetch(`/api/data/users/by-auth-id/?auth_user_id=${user.id}`)
+    apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`)
       .then(res => res.json())
       .then(data => setInternalUserId(data?.id ?? null))
       .catch(() => setInternalUserId(null));
@@ -103,7 +103,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
     setLoading(true);
 
     try {
-      let url = `/api/data/tickets/?condo_id=${condoId}`;
+      let url = `/api/chamados/?condominio_id=${condoId}`;
 
       // MORADOR only sees own tickets
       if (isMorador && internalUserId) {
@@ -117,7 +117,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
       // Fetch creator names
       if (rows.length > 0) {
         const creatorIds = [...new Set(rows.map(r => r.created_by))];
-        const usersRes = await apiFetch(`/api/data/users/?ids=${creatorIds.join(',')}`);
+        const usersRes = await apiFetch(`/api/auth/usuario/?ids=${creatorIds.join(',')}`);
         const usersData = await usersRes.json();
         const usersList = Array.isArray(usersData) ? usersData : usersData?.results ?? [];
         const nameMap: Record<string, string> = {};
@@ -166,7 +166,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
     setSaving(true);
 
     try {
-      const createRes = await apiFetch('/api/data/tickets/', {
+      const createRes = await apiFetch('/api/chamados/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -196,7 +196,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
         formData.append('file', photo);
         formData.append('bucket', 'service-order-photos');
         formData.append('path', path);
-        await apiUpload('/api/data/storage/upload/', formData);
+        await apiUpload('/api/upload/', formData);
       }
 
       toast({ title: 'Chamado aberto com sucesso' });
@@ -214,7 +214,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
     if (reason) updatePayload.close_reason = reason;
 
     try {
-      const res = await apiFetch(`/api/data/tickets/${ticketId}/`, {
+      const res = await apiFetch(`/api/chamados/${ticketId}/`, {
         method: 'PATCH',
         body: JSON.stringify(updatePayload),
       });

@@ -115,8 +115,8 @@ export default function Contratos() {
     if (filterType !== 'ALL') params.append('contract_type', filterType);
 
     const [contractsRes, providersRes] = await Promise.all([
-      apiFetch(`/api/data/contracts/?${params}`),
-      apiFetch(`/api/data/providers/?condo_id=${condoId}`),
+      apiFetch(`/api/contratos/?${params}`),
+      apiFetch(`/api/fornecedores/?condominio_id=${condoId}`),
     ]);
 
     const contractsData = contractsRes.ok ? await contractsRes.json() : [];
@@ -147,7 +147,7 @@ export default function Contratos() {
     }
     setSaving(true);
     try {
-      const res = await apiFetch('/api/data/contracts/', {
+      const res = await apiFetch('/api/contratos/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -182,7 +182,7 @@ export default function Contratos() {
 
     try {
       // Check for existing approvals
-      const existingRes = await apiFetch(`/api/data/approvals/?fiscal_document_id=${contract.id}&limit=1`);
+      const existingRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${contract.id}&limit=1`);
       const existingData = existingRes.ok ? await existingRes.json() : [];
       const existingList = Array.isArray(existingData) ? existingData : existingData.results ?? [];
 
@@ -193,7 +193,7 @@ export default function Contratos() {
       }
 
       // Get approvers (SUBSINDICO + CONSELHO)
-      const approversRes = await apiFetch(`/api/data/user-condos/?condo_id=${condoId}&role=SUBSINDICO,CONSELHO&status=ativo`);
+      const approversRes = await apiFetch(`/api/membros/?condominio_id=${condoId}&role=SUBSINDICO,CONSELHO&status=ativo`);
       const approversData = approversRes.ok ? await approversRes.json() : [];
       const approvers = Array.isArray(approversData) ? approversData : approversData.results ?? [];
 
@@ -204,7 +204,7 @@ export default function Contratos() {
       }
 
       // Update contract status
-      const updateRes = await apiFetch(`/api/data/contracts/${contract.id}/`, {
+      const updateRes = await apiFetch(`/api/contratos/${contract.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'AGUARDANDO_APROVACAO' }),
       });
@@ -222,14 +222,14 @@ export default function Contratos() {
         approver_role: a.role,
       }));
 
-      const approvalRes = await apiFetch('/api/data/approvals/bulk/', {
+      const approvalRes = await apiFetch('/api/aprovacoes-doc-fiscal/bulk/', {
         method: 'POST',
         body: JSON.stringify(records),
       });
 
       if (!approvalRes.ok) {
         // Revert status if approval records fail
-        await apiFetch(`/api/data/contracts/${contract.id}/`, {
+        await apiFetch(`/api/contratos/${contract.id}/`, {
           method: 'PATCH',
           body: JSON.stringify({ status: 'RASCUNHO' }),
         });

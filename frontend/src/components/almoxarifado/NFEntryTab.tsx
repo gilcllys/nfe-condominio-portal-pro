@@ -79,7 +79,7 @@ export default function NFEntryTab() {
   useEffect(() => {
     if (!condoId) return;
 
-    apiFetch(`/api/data/stock-items/?condo_id=${condoId}`)
+    apiFetch(`/api/itens-estoque/?condominio_id=${condoId}`)
       .then(res => res.json())
       .then(data => {
         const items = Array.isArray(data) ? data : data?.results ?? [];
@@ -87,7 +87,7 @@ export default function NFEntryTab() {
       })
       .catch(() => setStockItems([]));
 
-    apiFetch(`/api/data/stock-categories/?condo_id=${condoId}`)
+    apiFetch(`/api/categorias-estoque/?condominio_id=${condoId}`)
       .then(res => res.json())
       .then(data => {
         const cats = Array.isArray(data) ? data : data?.results ?? [];
@@ -109,7 +109,7 @@ export default function NFEntryTab() {
     formData.append('bucket', 'nfe-vigia');
     formData.append('path', path);
 
-    const uploadRes = await apiUpload('/api/data/storage/upload/', formData);
+    const uploadRes = await apiUpload('/api/upload/', formData);
 
     if (!uploadRes.ok) {
       const errData = await uploadRes.json().catch(() => ({}));
@@ -216,7 +216,7 @@ export default function NFEntryTab() {
 
     try {
       // Get internal user id
-      const userRes = await apiFetch(`/api/data/users/by-auth-id/?auth_user_id=${user.id}`);
+      const userRes = await apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`);
       const internalUser = await userRes.json();
 
       if (!internalUser || !internalUser.id) {
@@ -226,7 +226,7 @@ export default function NFEntryTab() {
       }
 
       // Create fiscal document
-      const fdRes = await apiFetch('/api/data/fiscal-documents/', {
+      const fdRes = await apiFetch('/api/documentos-fiscais/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -257,7 +257,7 @@ export default function NFEntryTab() {
 
         if (item.create_new || !itemId) {
           // Check if stock item already exists by name
-          const existingRes = await apiFetch(`/api/data/stock-items/?condo_id=${condoId}&name=${encodeURIComponent(itemName)}`);
+          const existingRes = await apiFetch(`/api/itens-estoque/?condominio_id=${condoId}&name=${encodeURIComponent(itemName)}`);
           const existingData = await existingRes.json();
           const existingList = Array.isArray(existingData) ? existingData : existingData?.results ?? [];
           const existingItem = existingList.find((i: any) => i.name === itemName);
@@ -265,7 +265,7 @@ export default function NFEntryTab() {
           if (existingItem?.id) {
             itemId = existingItem.id;
           } else {
-            const newItemRes = await apiFetch('/api/data/stock-items/', {
+            const newItemRes = await apiFetch('/api/itens-estoque/', {
               method: 'POST',
               body: JSON.stringify({
                 condo_id: condoId,
@@ -291,7 +291,7 @@ export default function NFEntryTab() {
         }
 
         // Link item to the fiscal document
-        const nfItemRes = await apiFetch('/api/data/fiscal-document-items/', {
+        const nfItemRes = await apiFetch('/api/itens-doc-fiscal/', {
           method: 'POST',
           body: JSON.stringify({
             fiscal_document_id: fdDoc.id,
@@ -309,7 +309,7 @@ export default function NFEntryTab() {
 
       // Create approval records
       const requiredRoles = getRequiredRoles(nfData.valor_total ?? 0, config);
-      const approversRes = await apiFetch(`/api/data/user-condos/?condo_id=${condoId}&status=ativo`);
+      const approversRes = await apiFetch(`/api/membros/?condominio_id=${condoId}&status=ativo`);
       const approversData = await approversRes.json();
       const allUserCondos = Array.isArray(approversData) ? approversData : approversData?.results ?? [];
       const approvers = allUserCondos.filter((a: any) => requiredRoles.includes(a.role));
@@ -319,7 +319,7 @@ export default function NFEntryTab() {
 
       if (approvers.length > 0) {
         for (const a of approvers) {
-          await apiFetch('/api/data/approvals/', {
+          await apiFetch('/api/aprovacoes-doc-fiscal/', {
             method: 'POST',
             body: JSON.stringify({
               fiscal_document_id: fdDoc.id,

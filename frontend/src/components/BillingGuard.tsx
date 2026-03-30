@@ -36,9 +36,9 @@ export function BillingGuard({ children }: BillingGuardProps) {
     const fetchBilling = async () => {
       setLoading(true);
       try {
-        const res = await apiFetch(`/api/data/condos/${condoId}/billing/`);
+        const res = await apiFetch(`/api/condominios/${condoId}/cobranca/`);
         const data = await res.json();
-        setStatus((data?.subscription_status as SubscriptionStatus) ?? 'trial');
+        setStatus((data?.status_assinatura as SubscriptionStatus) ?? 'trial');
       } catch {
         setStatus('trial'); // fail-open
       }

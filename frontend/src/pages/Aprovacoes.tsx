@@ -124,7 +124,7 @@ export default function Aprovacoes() {
       const params = new URLSearchParams({ condo_id: condoId, ordering: '-created_at' });
       if (filterStatus !== 'ALL') params.append('status', filterStatus);
 
-      const docRes = await apiFetch(`/api/data/fiscal-documents/?${params}`);
+      const docRes = await apiFetch(`/api/documentos-fiscais/?${params}`);
       const docData = docRes.ok ? await docRes.json() : [];
       const docList = Array.isArray(docData) ? docData : docData.results ?? [];
 
@@ -135,7 +135,7 @@ export default function Aprovacoes() {
       }
 
       const docIds = (docList as any[]).map(d => d.id);
-      const approvalsRes = await apiFetch(`/api/data/approvals/?fiscal_document_id=${docIds.join(',')}`);
+      const approvalsRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${docIds.join(',')}`);
       const approvalsData = approvalsRes.ok ? await approvalsRes.json() : [];
       const approvalsList = Array.isArray(approvalsData) ? approvalsData : approvalsData.results ?? [];
 
@@ -184,7 +184,7 @@ export default function Aprovacoes() {
       const authUser = await authApi.getUser();
       let internalUserId: string | null = null;
       if (authUser) {
-        const userRes = await apiFetch(`/api/data/users/?auth_user_id=${authUser.id}`);
+        const userRes = await apiFetch(`/api/auth/usuario/?auth_user_id=${authUser.id}`);
         if (userRes.ok) {
           const userData = await userRes.json();
           const userList = Array.isArray(userData) ? userData : userData.results ?? [];
@@ -192,7 +192,7 @@ export default function Aprovacoes() {
         }
       }
 
-      const ordersRes = await apiFetch(`/api/data/service-orders/?condo_id=${condoId}&status=AGUARDANDO_APROVACAO&ordering=-created_at`);
+      const ordersRes = await apiFetch(`/api/ordens-servico/?condominio_id=${condoId}&status=AGUARDANDO_APROVACAO&ordering=-created_at`);
       const ordersData = ordersRes.ok ? await ordersRes.json() : [];
       const orders = Array.isArray(ordersData) ? ordersData : ordersData.results ?? [];
 
@@ -203,7 +203,7 @@ export default function Aprovacoes() {
       }
 
       const orderIds = (orders as any[]).map(o => o.id);
-      const approvalsRes = await apiFetch(`/api/data/os-approvals/?service_order_id=${orderIds.join(',')}&approval_type=ORCAMENTO`);
+      const approvalsRes = await apiFetch(`/api/aprovacoes/?service_order_id=${orderIds.join(',')}&approval_type=ORCAMENTO`);
       const approvalsData = approvalsRes.ok ? await approvalsRes.json() : [];
       const approvalsList = Array.isArray(approvalsData) ? approvalsData : approvalsData.results ?? [];
 

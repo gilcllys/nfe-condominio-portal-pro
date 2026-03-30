@@ -47,7 +47,7 @@ export default function ApprovalsTab() {
 
     try {
       // Fetch pending fiscal documents
-      const docsRes = await apiFetch(`/api/data/fiscal-documents/?condo_id=${condoId}&status=PENDENTE`);
+      const docsRes = await apiFetch(`/api/documentos-fiscais/?condominio_id=${condoId}&status=PENDENTE`);
       const docsData = await docsRes.json();
       const docs = Array.isArray(docsData) ? docsData : docsData?.results ?? [];
 
@@ -60,7 +60,7 @@ export default function ApprovalsTab() {
       const docIds = docs.map((d: any) => d.id);
 
       // Fetch approvals for these documents
-      const approvalsRes = await apiFetch(`/api/data/approvals/?condo_id=${condoId}`);
+      const approvalsRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?condominio_id=${condoId}`);
       const approvalsData = await approvalsRes.json();
       const allApprovals = Array.isArray(approvalsData) ? approvalsData : approvalsData?.results ?? [];
 

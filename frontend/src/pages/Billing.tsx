@@ -145,7 +145,7 @@ export default function Billing() {
     if (!condoId) return;
     setLoadingInfo(true);
     try {
-      const res = await apiFetch(`/api/data/condos/${condoId}/`);
+      const res = await apiFetch(`/api/condominios/${condoId}/`);
       if (res.ok) {
         const data = await res.json();
         setBillingInfo({

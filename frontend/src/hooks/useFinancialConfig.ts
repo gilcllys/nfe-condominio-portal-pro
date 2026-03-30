@@ -29,7 +29,7 @@ export function useFinancialConfig(condoId: string | null) {
     if (!condoId) { setLoading(false); return; }
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/data/condos/${condoId}/financial-config/`);
+      const res = await apiFetch(`/api/condominios/${condoId}/config-financeira/`);
       const data = await res.json();
       setConfig(data as FinancialConfig | null);
     } catch {

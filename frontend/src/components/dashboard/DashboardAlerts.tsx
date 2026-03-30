@@ -27,9 +27,9 @@ export function DashboardAlerts() {
 
       try {
         const [osRes, stockRes, nfRejRes] = await Promise.all([
-          apiFetch(`/api/data/service-orders/?condo_id=${condoId}&status=AGUARDANDO_APROVACAO&created_before=${yesterday}&count_only=true`),
-          apiFetch(`/api/data/stock-items/?condo_id=${condoId}`),
-          apiFetch(`/api/data/fiscal-documents/?condo_id=${condoId}&status=REJEITADO&created_after=${thirtyDaysAgo}&count_only=true`),
+          apiFetch(`/api/ordens-servico/?condominio_id=${condoId}&status=AGUARDANDO_APROVACAO&created_before=${yesterday}&count_only=true`),
+          apiFetch(`/api/itens-estoque/?condominio_id=${condoId}`),
+          apiFetch(`/api/documentos-fiscais/?condominio_id=${condoId}&status=REJEITADO&created_after=${thirtyDaysAgo}&count_only=true`),
         ]);
 
         const newAlerts: AlertItem[] = [];

@@ -59,7 +59,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
 
   const fetchDocs = async () => {
     setLoading(true);
-    const res = await apiFetch(`/api/data/fiscal-documents/?service_order_id=${orderId}&ordering=-created_at`);
+    const res = await apiFetch(`/api/documentos-fiscais/?service_order_id=${orderId}&ordering=-created_at`);
     const json = await res.json();
     setDocs(json.results ?? json ?? []);
     setLoading(false);
@@ -131,7 +131,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
       formData.append('file', file);
       formData.append('bucket', 'nfe-vigia');
       formData.append('path', path);
-      const uploadRes = await apiUpload('/api/data/storage/upload/', formData);
+      const uploadRes = await apiUpload('/api/upload/', formData);
       if (uploadRes.ok) fileUrl = path;
     }
 
@@ -152,7 +152,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
       approval_status: 'pendente',
     };
 
-    const res = await apiFetch('/api/data/fiscal-documents/', {
+    const res = await apiFetch('/api/documentos-fiscais/', {
       method: 'POST',
       body: JSON.stringify(insertPayload),
     });
@@ -175,7 +175,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
     if (!doc.amount) return;
     setSubmitting(doc.id);
 
-    const configRes = await apiFetch(`/api/data/condos/${condoId}/financial-config/`);
+    const configRes = await apiFetch(`/api/condominios/${condoId}/config-financeira/`);
     let config: any = null;
     if (configRes.ok) {
       config = await configRes.json();
@@ -184,7 +184,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
     const amount = doc.amount;
     const requiredRoles = getRequiredRoles(amount, config as any);
 
-    const existingRes = await apiFetch(`/api/data/approvals/?fiscal_document_id=${doc.id}&limit=1`);
+    const existingRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${doc.id}&limit=1`);
     const existingJson = await existingRes.json();
     const existingApprovals = existingJson.results ?? existingJson ?? [];
 
@@ -194,7 +194,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
       return;
     }
 
-    const approversRes = await apiFetch(`/api/data/users/?condo_id=${condoId}&role=${requiredRoles.join(',')}&status=ativo`);
+    const approversRes = await apiFetch(`/api/auth/usuario/?condominio_id=${condoId}&role=${requiredRoles.join(',')}&status=ativo`);
     const approversJson = await approversRes.json();
     const approvers: any[] = approversJson.results ?? approversJson ?? [];
 
@@ -211,7 +211,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
       approver_role: a.role,
     }));
 
-    const insertRes = await apiFetch('/api/data/approvals/', {
+    const insertRes = await apiFetch('/api/aprovacoes-doc-fiscal/', {
       method: 'POST',
       body: JSON.stringify(approvalRecords),
     });

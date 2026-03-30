@@ -62,7 +62,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
 
   useEffect(() => {
     if (!user) return;
-    apiFetch(`/api/data/users/?auth_user_id=${user.id}`)
+    apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`)
       .then(res => res.json())
       .then(data => {
         const arr = data.results ?? data;
@@ -74,7 +74,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
 
   const fetchApprovals = async () => {
     setLoading(true);
-    const res = await apiFetch(`/api/data/os-approvals/?service_order_id=${orderId}&approval_type=${approvalType}&ordering=created_at`);
+    const res = await apiFetch(`/api/aprovacoes/?service_order_id=${orderId}&approval_type=${approvalType}&ordering=created_at`);
     const json = await res.json();
     const data: any[] = json.results ?? json;
 
@@ -84,7 +84,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
       const nameMap: Record<string, string> = {};
       for (const uid of userIds) {
         try {
-          const uRes = await apiFetch(`/api/data/users/${uid}/`);
+          const uRes = await apiFetch(`/api/auth/usuario/${uid}/`);
           if (uRes.ok) {
             const uData = await uRes.json();
             nameMap[uid] = uData.full_name;
@@ -105,7 +105,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
     const checkExpired = async () => {
       const expired = approvals.filter(a => a.decision === 'pendente' && new Date(a.expires_at) < new Date());
       for (const a of expired) {
-        await apiFetch(`/api/data/os-approvals/${a.id}/`, {
+        await apiFetch(`/api/aprovacoes/${a.id}/`, {
           method: 'PATCH',
           body: JSON.stringify({ decision: 'neutro', is_minerva: true, responded_at: new Date().toISOString() }),
         });
@@ -125,7 +125,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
     }
     setActionLoading(true);
 
-    const res = await apiFetch(`/api/data/os-approvals/${myApproval.id}/`, {
+    const res = await apiFetch(`/api/aprovacoes/${myApproval.id}/`, {
       method: 'PATCH',
       body: JSON.stringify({
         decision,
@@ -173,7 +173,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
     // We need to update each one individually since there's no bulk update by filter
     let hasError = false;
     for (const a of approvals) {
-      const res = await apiFetch(`/api/data/os-approvals/${a.id}/`, {
+      const res = await apiFetch(`/api/aprovacoes/${a.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({
           is_minerva: true,

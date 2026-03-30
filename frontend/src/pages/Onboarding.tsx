@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { setStoredTokens } from '@/lib/api';
+import { setStoredTokens, API_BASE_URL } from '@/lib/api';
 import {
   Building2,
   User,
@@ -18,8 +18,6 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string || 'http://localhost:8000';
 
 const ESTADOS_BR = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
@@ -124,7 +122,9 @@ export default function Onboarding() {
 
       // Limpar condo cache para que CondoContext busque o novo
       localStorage.removeItem('nfe_vigia_active_condo');
-      navigate('/dashboard', { replace: true });
+
+      // Forcar reload para que AuthContext detecte os tokens salvos
+      window.location.href = '/dashboard';
     } catch (err) {
       toast({
         variant: 'destructive',

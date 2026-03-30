@@ -111,10 +111,10 @@ export default function OrdemServicoDetalhe() {
     setLoading(true);
 
     const [orderRes, activitiesRes, materialsRes, docsRes] = await Promise.all([
-      apiFetch(`/api/data/service-orders/${id}/?condo_id=${condoId}`),
-      apiFetch(`/api/data/service-orders/${id}/activities/?ordering=-created_at`),
-      apiFetch(`/api/data/service-order-materials/?service_order_id=${id}`),
-      apiFetch(`/api/data/service-orders/${id}/photos/?ordering=-created_at`),
+      apiFetch(`/api/ordens-servico/${id}/?condominio_id=${condoId}`),
+      apiFetch(`/api/ordens-servico/${id}/activities/?ordering=-created_at`),
+      apiFetch(`/api/materiais-os/?service_order_id=${id}`),
+      apiFetch(`/api/ordens-servico/${id}/photos/?ordering=-created_at`),
     ]);
 
     if (!orderRes.ok) {
@@ -136,8 +136,8 @@ export default function OrdemServicoDetalhe() {
     setDocuments(Array.isArray(docsData) ? docsData : docsData.results ?? []);
 
     const [orcRes, finalRes] = await Promise.all([
-      apiFetch(`/api/data/os-approvals/?service_order_id=${id}&approval_type=ORCAMENTO`),
-      apiFetch(`/api/data/os-approvals/?service_order_id=${id}&approval_type=FINAL`),
+      apiFetch(`/api/aprovacoes/?service_order_id=${id}&approval_type=ORCAMENTO`),
+      apiFetch(`/api/aprovacoes/?service_order_id=${id}&approval_type=FINAL`),
     ]);
 
     const orcData = orcRes.ok ? await orcRes.json() : [];
@@ -156,7 +156,7 @@ export default function OrdemServicoDetalhe() {
   const changeStatus = async (newStatus: string) => {
     if (!order || !condoId) return;
     setActionLoading(true);
-    const res = await apiFetch(`/api/data/service-orders/${order.id}/`, {
+    const res = await apiFetch(`/api/ordens-servico/${order.id}/`, {
       method: 'PATCH',
       body: JSON.stringify({ status: newStatus }),
     });

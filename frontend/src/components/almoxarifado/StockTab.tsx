@@ -103,13 +103,13 @@ export default function StockTab() {
   const fetchCategories = async () => {
     if (!condoId) return;
     try {
-      const res = await apiFetch(`/api/data/stock-categories/?condo_id=${condoId}`);
+      const res = await apiFetch(`/api/categorias-estoque/?condominio_id=${condoId}`);
       const data = await res.json();
       const cats = Array.isArray(data) ? data : data?.results ?? [];
 
       // Seed default categories if none exist
       if (cats.length === 0) {
-        const seedRes = await apiFetch(`/api/data/stock-categories/seed-defaults/?condo_id=${condoId}`, {
+        const seedRes = await apiFetch(`/api/categorias-estoque/semear-padroes/?condominio_id=${condoId}`, {
           method: 'POST',
           body: JSON.stringify({ condo_id: condoId }),
         });
@@ -129,12 +129,12 @@ export default function StockTab() {
     setLoading(true);
 
     try {
-      const res = await apiFetch(`/api/data/stock-items/?condo_id=${condoId}`);
+      const res = await apiFetch(`/api/itens-estoque/?condominio_id=${condoId}`);
       const data = await res.json();
       const stockItems = Array.isArray(data) ? data : data?.results ?? [];
 
       // Fetch balance from the stock-movements/balance endpoint
-      const balanceRes = await apiFetch(`/api/data/stock-movements/balance/?condo_id=${condoId}`);
+      const balanceRes = await apiFetch(`/api/movimentacoes-estoque/saldo/?condominio_id=${condoId}`);
       const balances = await balanceRes.json();
       const balanceList = Array.isArray(balances) ? balances : balances?.results ?? [];
 
@@ -179,7 +179,7 @@ export default function StockTab() {
     setSaving(true);
 
     try {
-      const res = await apiFetch('/api/data/stock-categories/', {
+      const res = await apiFetch('/api/categorias-estoque/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -213,7 +213,7 @@ export default function StockTab() {
     setSaving(true);
 
     try {
-      const res = await apiFetch('/api/data/stock-items/', {
+      const res = await apiFetch('/api/itens-estoque/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -260,7 +260,7 @@ export default function StockTab() {
     setSaving(true);
 
     try {
-      const res = await apiFetch(`/api/data/stock-items/${editItem.id}/`, {
+      const res = await apiFetch(`/api/itens-estoque/${editItem.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({
           name: editForm.name.trim(),
@@ -306,7 +306,7 @@ export default function StockTab() {
     setSaving(true);
 
     try {
-      const res = await apiFetch('/api/data/stock-movements/', {
+      const res = await apiFetch('/api/movimentacoes-estoque/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,

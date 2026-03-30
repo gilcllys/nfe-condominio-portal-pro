@@ -59,7 +59,7 @@ export function OSPhotosCard({ orderId, photos, photoUrls, canUploadFinalPhotos,
       formData.append('file', file);
       formData.append('bucket', 'service-order-photos');
       formData.append('path', path);
-      const uploadRes = await apiUpload('/api/data/storage/upload/', formData);
+      const uploadRes = await apiUpload('/api/upload/', formData);
 
       if (!uploadRes.ok) {
         const errData = await uploadRes.json().catch(() => ({}));
@@ -68,7 +68,7 @@ export function OSPhotosCard({ orderId, photos, photoUrls, canUploadFinalPhotos,
         continue;
       }
 
-      const dbRes = await apiFetch(`/api/data/service-orders/${orderId}/photos/`, {
+      const dbRes = await apiFetch(`/api/ordens-servico/${orderId}/photos/`, {
         method: 'POST',
         body: JSON.stringify({
           service_order_id: orderId,

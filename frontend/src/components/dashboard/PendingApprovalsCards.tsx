@@ -28,7 +28,7 @@ export function PendingApprovalsCards() {
 
   useEffect(() => {
     if (!user) return;
-    apiFetch(`/api/data/users/by-auth-id/?auth_user_id=${user.id}`)
+    apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`)
       .then(res => res.json())
       .then(data => setInternalUserId(data?.id ?? null))
       .catch(() => setInternalUserId(null));
@@ -45,7 +45,7 @@ export function PendingApprovalsCards() {
 
       try {
         // OS approvals
-        const osRes = await apiFetch(`/api/data/os-approvals/?condo_id=${condoId}&approver_id=${internalUserId}&decision=pendente`);
+        const osRes = await apiFetch(`/api/aprovacoes/?condominio_id=${condoId}&approver_id=${internalUserId}&decision=pendente`);
         const osData = await osRes.json();
         const osRows = Array.isArray(osData) ? osData : osData?.results ?? [];
 
@@ -59,13 +59,13 @@ export function PendingApprovalsCards() {
         setMinExpiry(osMinExp);
 
         // NF docs pending
-        const nfRes = await apiFetch(`/api/data/fiscal-documents/?condo_id=${condoId}&status=PENDENTE`);
+        const nfRes = await apiFetch(`/api/documentos-fiscais/?condominio_id=${condoId}&status=PENDENTE`);
         const nfData = await nfRes.json();
         const pendingDocs = Array.isArray(nfData) ? nfData : nfData?.results ?? [];
 
         let nfCount = 0;
         if (pendingDocs.length > 0) {
-          const votesRes = await apiFetch(`/api/data/approvals/?approver_user_id=${internalUserId}&decision=aprovado,rejeitado`);
+          const votesRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?approver_user_id=${internalUserId}&decision=aprovado,rejeitado`);
           const votesData = await votesRes.json();
           const votesRows = Array.isArray(votesData) ? votesData : votesData?.results ?? [];
           const votedIds = new Set(votesRows.map((v: any) => v.fiscal_document_id));
@@ -84,7 +84,7 @@ export function PendingApprovalsCards() {
 
         // Minerva for síndico
         if (isSindico) {
-          const minervaRes = await apiFetch(`/api/data/os-approvals/?condo_id=${condoId}&is_minerva=true&minerva_justification__isnull=true`);
+          const minervaRes = await apiFetch(`/api/aprovacoes/?condominio_id=${condoId}&is_minerva=true&minerva_justification__isnull=true`);
           const minervaData = await minervaRes.json();
           const minervaRows = Array.isArray(minervaData) ? minervaData : minervaData?.results ?? [];
           setMinervaCount(minervaRows.length);

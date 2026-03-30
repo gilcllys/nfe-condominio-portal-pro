@@ -41,7 +41,7 @@ interface LogSOActivityParams {
 
 export async function logSOActivity({ serviceOrderId, action, description }: LogSOActivityParams) {
   try {
-    await apiFetch(`/api/data/service-orders/${serviceOrderId}/activities/`, {
+    await apiFetch(`/api/ordens-servico/${serviceOrderId}/activities/`, {
       method: 'POST',
       body: JSON.stringify({
         activity_type: action,

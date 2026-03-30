@@ -71,14 +71,14 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
 
   const fetchBudgets = async () => {
     setLoading(true);
-    const res = await apiFetch(`/api/data/budgets/?service_order_id=${orderId}&ordering=created_at`);
+    const res = await apiFetch(`/api/orcamentos/?service_order_id=${orderId}&ordering=created_at`);
     const json = await res.json();
     setBudgets(json.results ?? json ?? []);
     setLoading(false);
   };
 
   const fetchProviders = async () => {
-    const res = await apiFetch(`/api/data/providers/?condo_id=${condoId}&status=ativo&ordering=trade_name`);
+    const res = await apiFetch(`/api/fornecedores/?condominio_id=${condoId}&status=ativo&ordering=trade_name`);
     const json = await res.json();
     const data: any[] = json.results ?? json ?? [];
     setProviders(data.map((p: any) => ({ id: p.id, trade_name: p.trade_name, risk_score: p.risk_score })));
@@ -125,7 +125,7 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
 
     let nfeUserId: string | null = null;
     if (authUid) {
-      const uRes = await apiFetch(`/api/data/users/?auth_user_id=${authUid}`);
+      const uRes = await apiFetch(`/api/auth/usuario/?auth_user_id=${authUid}`);
       const uJson = await uRes.json();
       const uArr = uJson.results ?? uJson;
       const userData = Array.isArray(uArr) ? uArr[0] : null;
@@ -143,7 +143,7 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
       created_by_user_id: nfeUserId,
     };
 
-    const res = await apiFetch('/api/data/budgets/', {
+    const res = await apiFetch('/api/orcamentos/', {
       method: 'POST',
       body: JSON.stringify(insertPayload),
     });
@@ -159,7 +159,7 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
   };
 
   const handleDelete = async (id: string) => {
-    const res = await apiFetch(`/api/data/budgets/${id}/`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/orcamentos/${id}/`, { method: 'DELETE' });
     if (res.ok) fetchBudgets();
   };
 
@@ -179,14 +179,14 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
 
     setSubmitting(true);
 
-    const configRes = await apiFetch(`/api/data/condos/${condoId}/financial-config/`);
+    const configRes = await apiFetch(`/api/condominios/${condoId}/config-financeira/`);
     let deadlineHours = 48;
     if (configRes.ok) {
       const config = await configRes.json();
       deadlineHours = config?.approval_deadline_hours ?? 48;
     }
 
-    const approversRes = await apiFetch(`/api/data/users/?condo_id=${condoId}&role=SUBSINDICO,CONSELHO&status=ativo`);
+    const approversRes = await apiFetch(`/api/auth/usuario/?condominio_id=${condoId}&role=SUBSINDICO,CONSELHO&status=ativo`);
     const approversJson = await approversRes.json();
     const approvers: any[] = approversJson.results ?? approversJson ?? [];
 
@@ -209,11 +209,11 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
     }));
 
     // Delete any existing budget approvals before inserting (idempotent re-submission)
-    await apiFetch(`/api/data/os-approvals/?service_order_id=${orderId}&approval_type=ORCAMENTO`, {
+    await apiFetch(`/api/aprovacoes/?service_order_id=${orderId}&approval_type=ORCAMENTO`, {
       method: 'DELETE',
     });
 
-    const insertRes = await apiFetch('/api/data/os-approvals/', {
+    const insertRes = await apiFetch('/api/aprovacoes/', {
       method: 'POST',
       body: JSON.stringify(approvalRecords),
     });
@@ -223,7 +223,7 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
       toast({ title: 'Erro ao enviar para aprovação', description: errData.message ?? errData.detail ?? '', variant: 'destructive' });
     } else {
       // Update service order status to AGUARDANDO_APROVACAO
-      await apiFetch(`/api/data/service-orders/${orderId}/`, {
+      await apiFetch(`/api/ordens-servico/${orderId}/`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'AGUARDANDO_APROVACAO' }),
       });

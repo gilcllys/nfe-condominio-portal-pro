@@ -92,7 +92,7 @@ export default function Prestadores() {
     if (!condoId) return;
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/data/providers/?condo_id=${condoId}&ordering=trade_name`);
+      const res = await apiFetch(`/api/fornecedores/?condominio_id=${condoId}&ordering=trade_name`);
       const data = res.ok ? await res.json() : [];
       setProviders(Array.isArray(data) ? data : data.results ?? []);
     } catch {
@@ -149,7 +149,7 @@ export default function Prestadores() {
     if (!condoId) return;
     setSaving(true);
     try {
-      const res = await apiFetch('/api/data/providers/', {
+      const res = await apiFetch('/api/fornecedores/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -190,7 +190,7 @@ export default function Prestadores() {
     setDetailProvider(provider);
     setRiskAnalysis(null);
     try {
-      const res = await apiFetch(`/api/data/providers/${provider.id}/risk-analysis/`);
+      const res = await apiFetch(`/api/fornecedores/${provider.id}/risk-analysis/`);
       if (res.ok) {
         const data = await res.json();
         if (data) {
@@ -229,7 +229,7 @@ export default function Prestadores() {
       if (data?.error) throw new Error(data.error);
 
       // Save risk analysis
-      const saveRes = await apiFetch(`/api/data/providers/${detailProvider.id}/risk-analysis/`, {
+      const saveRes = await apiFetch(`/api/fornecedores/${detailProvider.id}/risk-analysis/`, {
         method: 'POST',
         body: JSON.stringify({
           score: data.score ?? 0,
@@ -250,7 +250,7 @@ export default function Prestadores() {
       }
 
       // Update provider risk score
-      await apiFetch(`/api/data/providers/${detailProvider.id}/`, {
+      await apiFetch(`/api/fornecedores/${detailProvider.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({ risk_score: data.score ?? 0 }),
       });
@@ -279,7 +279,7 @@ export default function Prestadores() {
 
   const toggleStatus = async (provider: Provider) => {
     const newStatus = provider.status === 'ativo' ? 'inativo' : 'ativo';
-    await apiFetch(`/api/data/providers/${provider.id}/`, {
+    await apiFetch(`/api/fornecedores/${provider.id}/`, {
       method: 'PATCH',
       body: JSON.stringify({ status: newStatus }),
     });

@@ -18,7 +18,7 @@ interface LogActivityParams {
 
 export async function logActivity({ condoId, action, entity, entityId, description }: LogActivityParams) {
   try {
-    await apiFetch('/api/data/activity-logs/', {
+    await apiFetch('/api/logs-atividade/', {
       method: 'POST',
       body: JSON.stringify({
         condo_id: condoId,

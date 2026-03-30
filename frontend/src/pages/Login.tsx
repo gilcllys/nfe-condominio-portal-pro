@@ -58,7 +58,9 @@ export default function Login() {
       // Login bem-sucedido — JWT tokens ja foram salvos pelo authApi.login()
       // O CondoContext vai buscar o condominio ativo automaticamente
       localStorage.removeItem('nfe_vigia_active_condo');
-      navigate('/dashboard', { replace: true });
+
+      // Forcar reload para que AuthContext detecte os tokens salvos
+      window.location.href = '/dashboard';
     } catch (error: any) {
       toast({ title: 'Erro', description: 'Ocorreu um erro. Tente novamente.', variant: 'destructive' });
     } finally {

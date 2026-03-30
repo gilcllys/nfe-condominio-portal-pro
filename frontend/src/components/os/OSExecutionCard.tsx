@@ -61,7 +61,7 @@ export function OSExecutionCard({
       return;
     }
 
-    const res = await apiFetch(`/api/data/service-orders/${orderId}/`, {
+    const res = await apiFetch(`/api/ordens-servico/${orderId}/`, {
       method: 'PATCH',
       body: JSON.stringify({
         executor_type: form.executor_type || null,

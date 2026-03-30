@@ -47,7 +47,7 @@ export default function FinancialConfigSection() {
   useEffect(() => {
     if (!condoId || !isSindico) { setLoading(false); return; }
     setLoading(true);
-    apiFetch(`/api/data/condos/${condoId}/financial-config/`)
+    apiFetch(`/api/condominios/${condoId}/config-financeira/`)
       .then((res) => res.json())
       .then((data) => {
         if (data && data.id) {
@@ -93,7 +93,7 @@ export default function FinancialConfigSection() {
     };
 
     try {
-      const res = await apiFetch(`/api/data/condos/${condoId}/financial-config/`, {
+      const res = await apiFetch(`/api/condominios/${condoId}/config-financeira/`, {
         method: existingId ? 'PUT' : 'POST',
         body: JSON.stringify(payload),
       });

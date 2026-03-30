@@ -43,7 +43,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
     console.log('[PendingApprovals] condoId usado na query:', condoId);
 
     try {
-      const res = await apiFetch(`/api/data/pending-user-approvals/?condo_id=${condoId}`);
+      const res = await apiFetch(`/api/membros/?condominio_id=${condoId}`);
       const data = await res.json();
 
       console.log('[PendingApprovals] API resultado bruto:', data);
@@ -86,7 +86,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
 
     try {
       // Approve user via backend endpoint
-      const approveRes = await apiFetch('/api/data/pending-user-approvals/approve/', {
+      const approveRes = await apiFetch('/api/membros/aprovar/', {
         method: 'POST',
         body: JSON.stringify({ user_id: user.id, condo_id: condoId }),
       });
@@ -98,12 +98,12 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
       }
 
       // Create resident record if one doesn't exist yet
-      const residentRes = await apiFetch(`/api/data/residents/?condo_id=${condoId}&email=${encodeURIComponent(user.email.toLowerCase())}`);
+      const residentRes = await apiFetch(`/api/moradores/?condominio_id=${condoId}&email=${encodeURIComponent(user.email.toLowerCase())}`);
       const residentData = await residentRes.json();
       const residentList = Array.isArray(residentData) ? residentData : residentData?.results ?? [];
 
       if (residentList.length === 0) {
-        await apiFetch('/api/data/residents/', {
+        await apiFetch('/api/moradores/', {
           method: 'POST',
           body: JSON.stringify({
             condo_id: condoId,
@@ -146,7 +146,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
     setProcessing(rejectTarget.id);
 
     try {
-      const res = await apiFetch('/api/data/pending-user-approvals/reject/', {
+      const res = await apiFetch('/api/membros/recusar/', {
         method: 'POST',
         body: JSON.stringify({ user_id: rejectTarget.id, condo_id: condoId }),
       });

@@ -67,8 +67,8 @@ export function DashboardRiskCard() {
 
       try {
         const [nfRes, provRes] = await Promise.all([
-          apiFetch(`/api/data/fiscal-documents/?condo_id=${condoId}&status=PENDENTE`),
-          apiFetch(`/api/data/providers/?condo_id=${condoId}`),
+          apiFetch(`/api/documentos-fiscais/?condominio_id=${condoId}&status=PENDENTE`),
+          apiFetch(`/api/fornecedores/?condominio_id=${condoId}`),
         ]);
 
         const nfData = await nfRes.json();

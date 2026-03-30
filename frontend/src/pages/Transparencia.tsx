@@ -66,8 +66,8 @@ export default function Transparencia() {
       setLoading(true);
 
       const [osRes, nfRes] = await Promise.all([
-        apiFetch(`/api/data/service-orders/?condo_id=${condoId}&status=FINALIZADA,CANCELADA&ordering=-created_at`),
-        apiFetch(`/api/data/fiscal-documents/?condo_id=${condoId}&status=PROCESSADO,CANCELADO&ordering=-created_at`),
+        apiFetch(`/api/ordens-servico/?condominio_id=${condoId}&status=FINALIZADA,CANCELADA&ordering=-created_at`),
+        apiFetch(`/api/documentos-fiscais/?condominio_id=${condoId}&status=PROCESSADO,CANCELADO&ordering=-created_at`),
       ]);
 
       const osData = osRes.ok ? await osRes.json() : [];

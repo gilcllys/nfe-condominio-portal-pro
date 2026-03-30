@@ -69,7 +69,7 @@ export default function NotasFiscais() {
   // Step 1: resolve internal user id from auth user
   useEffect(() => {
     if (!user) return;
-    apiFetch(`/api/data/users/?auth_user_id=${user.id}`)
+    apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`)
       .then(async (res) => {
         if (!res.ok) return;
         const data = await res.json();
@@ -83,7 +83,7 @@ export default function NotasFiscais() {
     if (!condoId || !internalUserId) { setLoading(false); return; }
     setLoading(true);
 
-    apiFetch(`/api/data/approvals/?approver_user_id=${internalUserId}&condo_id=${condoId}&expand=fiscal_documents`)
+    apiFetch(`/api/aprovacoes-doc-fiscal/?approver_user_id=${internalUserId}&condominio_id=${condoId}&expand=fiscal_documents`)
       .then(async (res) => {
         if (!res.ok) { setLoading(false); return; }
         const data = await res.json();
@@ -145,7 +145,7 @@ export default function NotasFiscais() {
     setSubmitting(true);
 
     try {
-      const res = await apiFetch(`/api/data/approvals/${selectedApprovalId}/`, {
+      const res = await apiFetch(`/api/aprovacoes-doc-fiscal/${selectedApprovalId}/`, {
         method: 'PATCH',
         body: JSON.stringify({
           decision,

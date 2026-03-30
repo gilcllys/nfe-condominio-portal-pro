@@ -46,7 +46,7 @@ export function DashboardApprovals() {
     const fetchPending = async () => {
       setLoading(true);
       try {
-        const res = await apiFetch(`/api/data/fiscal-documents/?condo_id=${condoId}&status=PENDENTE&ordering=-created_at&limit=5`);
+        const res = await apiFetch(`/api/documentos-fiscais/?condominio_id=${condoId}&status=PENDENTE&ordering=-created_at&limit=5`);
         const data = await res.json();
         const rows = Array.isArray(data) ? data : data?.results ?? [];
 

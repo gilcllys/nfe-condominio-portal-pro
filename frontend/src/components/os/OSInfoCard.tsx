@@ -34,19 +34,19 @@ export function OSInfoCard({ description, location, priority, createdAt, created
 
   useEffect(() => {
     if (providerId) {
-      apiFetch(`/api/data/providers/${providerId}/`)
+      apiFetch(`/api/fornecedores/${providerId}/`)
         .then(res => res.ok ? res.json() : null)
         .then(data => setProviderName(data?.trade_name ?? null))
         .catch(() => setProviderName(null));
     }
     if (ticketId) {
-      apiFetch(`/api/data/tickets/${ticketId}/`)
+      apiFetch(`/api/chamados/${ticketId}/`)
         .then(res => res.ok ? res.json() : null)
         .then(data => setTicketTitle(data?.title ?? null))
         .catch(() => setTicketTitle(null));
     }
     if (createdBy) {
-      apiFetch(`/api/data/users/${createdBy}/`)
+      apiFetch(`/api/auth/usuario/${createdBy}/`)
         .then(res => res.ok ? res.json() : null)
         .then(data => setCreatorName(data?.full_name ?? null))
         .catch(() => setCreatorName(null));

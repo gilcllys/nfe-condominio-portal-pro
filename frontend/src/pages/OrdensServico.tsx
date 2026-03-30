@@ -110,7 +110,7 @@ export default function OrdensServico() {
   // Get internal user id for MORADOR filtering
   useEffect(() => {
     if (!user) return;
-    apiFetch(`/api/data/users/?auth_user_id=${user.id}`)
+    apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`)
       .then(async (res) => {
         if (!res.ok) return;
         const data = await res.json();
@@ -121,12 +121,12 @@ export default function OrdensServico() {
 
   useEffect(() => {
     if (!condoId) return;
-    apiFetch(`/api/data/providers/?condo_id=${condoId}&ordering=trade_name`).then(async (res) => {
+    apiFetch(`/api/fornecedores/?condominio_id=${condoId}&ordering=trade_name`).then(async (res) => {
       if (!res.ok) return;
       const data = await res.json();
       setProviders(Array.isArray(data) ? data : data.results ?? []);
     });
-    apiFetch(`/api/data/tickets/?condo_id=${condoId}&status=ABERTO,EM_ANALISE&ordering=-created_at`).then(async (res) => {
+    apiFetch(`/api/chamados/?condominio_id=${condoId}&status=ABERTO,EM_ANALISE&ordering=-created_at`).then(async (res) => {
       if (!res.ok) return;
       const data = await res.json();
       setTickets(Array.isArray(data) ? data : data.results ?? []);
@@ -151,7 +151,7 @@ export default function OrdensServico() {
     }
 
     try {
-      const res = await apiFetch(`/api/data/service-orders/?${params}`);
+      const res = await apiFetch(`/api/ordens-servico/?${params}`);
       if (!res.ok) throw new Error('Erro ao carregar');
       const rawData = await res.json();
       const data = Array.isArray(rawData) ? rawData : rawData.results ?? [];
@@ -162,7 +162,7 @@ export default function OrdensServico() {
         const ids = ordersWithPhotos.map((o) => o.id);
         // Fetch photo counts
         for (const soId of ids) {
-          const photoRes = await apiFetch(`/api/data/service-orders/${soId}/photos/?count_only=true`);
+          const photoRes = await apiFetch(`/api/ordens-servico/${soId}/photos/?count_only=true`);
           if (photoRes.ok) {
             const photoData = await photoRes.json();
             const count = photoData.count ?? (Array.isArray(photoData) ? photoData.length : 0);
@@ -242,7 +242,7 @@ export default function OrdensServico() {
     setSaving(true);
 
     // Get internal user id
-    const userRes = await apiFetch(`/api/data/users/?auth_user_id=${user.id}`);
+    const userRes = await apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`);
     if (!userRes.ok) {
       toast({ title: 'Não foi possível identificar seu usuário', variant: 'destructive' });
       setSaving(false);
@@ -259,7 +259,7 @@ export default function OrdensServico() {
     }
 
     try {
-      const insertRes = await apiFetch('/api/data/service-orders/', {
+      const insertRes = await apiFetch('/api/ordens-servico/', {
         method: 'POST',
         body: JSON.stringify({
           condo_id: condoId,
@@ -287,7 +287,7 @@ export default function OrdensServico() {
 
       // If converting from ticket, update ticket status
       if (form.ticket_id) {
-        await apiFetch(`/api/data/tickets/${form.ticket_id}/`, {
+        await apiFetch(`/api/chamados/${form.ticket_id}/`, {
           method: 'PATCH',
           body: JSON.stringify({ status: 'VIROU_OS', service_order_id: soId }),
         });
@@ -301,9 +301,9 @@ export default function OrdensServico() {
         const path = `service-orders/${soId}/${crypto.randomUUID()}.${ext}`;
         formData.append('path', path);
         formData.append('file', photo);
-        const uploadRes = await apiUpload('/api/data/storage/upload/', formData);
+        const uploadRes = await apiUpload('/api/upload/', formData);
         if (uploadRes.ok) {
-          await apiFetch(`/api/data/service-orders/${soId}/photos/`, {
+          await apiFetch(`/api/ordens-servico/${soId}/photos/`, {
             method: 'POST',
             body: JSON.stringify({ service_order_id: soId, photo_type: 'PROBLEMA', file_url: path, observation: form.photo_observation || null }),
           });

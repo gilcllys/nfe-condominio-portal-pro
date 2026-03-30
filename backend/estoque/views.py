@@ -1,3 +1,4 @@
+from django.db.models import Sum, Case, When, F, DecimalField, Value
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -33,6 +34,43 @@ class ItemEstoqueViewSet(
         if nome:
             qs = qs.filter(nome=nome)
         return qs.order_by("nome")
+
+    @action(detail=False, methods=["get"], url_path="saldos")
+    def saldos(self, request):
+        """GET /api/itens-estoque/saldos/?condominio_id=... — saldo de cada item."""
+        condominio_id = self.get_condominio_id()
+        if not condominio_id:
+            return Response([])
+
+        itens = ItemEstoque.objects.filter(
+            condominio_id=condominio_id, excluido_em__isnull=True
+        ).annotate(
+            total_entrada=Sum(
+                Case(
+                    When(movimentacoes__tipo_movimento="ENTRADA", then=F("movimentacoes__quantidade")),
+                    default=Value(0),
+                    output_field=DecimalField(),
+                )
+            ),
+            total_saida=Sum(
+                Case(
+                    When(movimentacoes__tipo_movimento="SAIDA", then=F("movimentacoes__quantidade")),
+                    default=Value(0),
+                    output_field=DecimalField(),
+                )
+            ),
+        )
+
+        resultado = []
+        for item in itens:
+            entrada = float(item.total_entrada or 0)
+            saida = float(item.total_saida or 0)
+            resultado.append({
+                "item_id": str(item.id),
+                "nome": item.nome,
+                "saldo": entrada - saida,
+            })
+        return Response(resultado)
 
 
 class CategoriaEstoqueViewSet(
@@ -96,3 +134,43 @@ class MovimentacaoEstoqueViewSet(
         if not condominio_id:
             return MovimentacaoEstoque.objects.none()
         return MovimentacaoEstoque.objects.filter(condominio_id=condominio_id).order_by("-criado_em")
+
+    @action(detail=False, methods=["get"], url_path="saldo")
+    def saldo(self, request):
+        """GET /api/movimentacoes-estoque/saldo/?condominio_id=... — saldo agrupado por item."""
+        condominio_id = self.get_condominio_id()
+        if not condominio_id:
+            return Response([])
+
+        movs = (
+            MovimentacaoEstoque.objects.filter(
+                condominio_id=condominio_id, excluido_em__isnull=True
+            )
+            .values("item_id")
+            .annotate(
+                total_entrada=Sum(
+                    Case(
+                        When(tipo_movimento="ENTRADA", then=F("quantidade")),
+                        default=Value(0),
+                        output_field=DecimalField(),
+                    )
+                ),
+                total_saida=Sum(
+                    Case(
+                        When(tipo_movimento="SAIDA", then=F("quantidade")),
+                        default=Value(0),
+                        output_field=DecimalField(),
+                    )
+                ),
+            )
+        )
+
+        resultado = []
+        for m in movs:
+            entrada = float(m["total_entrada"] or 0)
+            saida = float(m["total_saida"] or 0)
+            resultado.append({
+                "item_id": str(m["item_id"]),
+                "saldo": entrada - saida,
+            })
+        return Response(resultado)

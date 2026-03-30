@@ -49,7 +49,7 @@ export default function RoleChangeDialog({
     setSaving(true);
 
     try {
-      const res = await apiFetch('/api/data/user-condos/change-role/', {
+      const res = await apiFetch('/api/membros/alterar-papel/', {
         method: 'POST',
         body: JSON.stringify({
           user_condo_id: userCondoUserId,

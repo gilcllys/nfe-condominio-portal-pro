@@ -63,7 +63,7 @@ export default function AddEmployeeDialog({ open, onOpenChange, condoId, onSaved
       }
 
       // 2. Create nfe_vigia.users record via signup-register endpoint
-      const userRes = await apiFetch('/api/data/signup-register/', {
+      const userRes = await apiFetch('/api/auth/cadastro/', {
         method: 'POST',
         body: JSON.stringify({
           auth_user_id: authUserId,
@@ -87,7 +87,7 @@ export default function AddEmployeeDialog({ open, onOpenChange, condoId, onSaved
       const insertedUser = await userRes.json();
 
       // 3. Create nfe_vigia.user_condos record
-      const condoRes = await apiFetch('/api/data/user-condos/', {
+      const condoRes = await apiFetch('/api/membros/', {
         method: 'POST',
         body: JSON.stringify({
           user_id: insertedUser.id || insertedUser.user_id,

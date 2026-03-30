@@ -24,7 +24,7 @@ export default function Dashboard() {
       setLoading(true);
 
       try {
-        const res = await apiFetch(`/api/data/dashboard/stats/?condo_id=${condoId}`);
+        const res = await apiFetch(`/api/condominios/dashboard-stats/?condominio_id=${condoId}`);
         const data = await res.json();
 
         setCounts({
