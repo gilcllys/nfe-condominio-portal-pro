@@ -11,10 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 interface Condo {
-  condo_id: string;
-  condo_name: string;
-  role: string;
-  is_default: boolean;
+  condominio_id: string;
+  condominio_nome: string;
+  papel: string;
+  padrao: boolean;
 }
 
 export function CondoSelector() {
@@ -27,7 +27,7 @@ export function CondoSelector() {
   useEffect(() => {
     const fetchCondos = async () => {
       try {
-        const res = await apiFetch('/api/data/condos/my/');
+        const res = await apiFetch('/api/condominios/meus/');
         const data = await res.json();
         setCondos(data ?? []);
       } catch (err) {
@@ -39,10 +39,10 @@ export function CondoSelector() {
   }, [condoId]);
 
   const handleSelect = async (condo: Condo) => {
-    if (condo.condo_id === condoId || switching) return;
+    if (condo.condominio_id === condoId || switching) return;
     setSwitching(true);
     try {
-      const success = await switchCondo(condo.condo_id);
+      const success = await switchCondo(condo.condominio_id);
       if (!success) {
         console.error('[CondoSelector] Switch failed');
       }
@@ -62,24 +62,24 @@ export function CondoSelector() {
           className="h-9 gap-2 px-3 font-medium cursor-pointer hover:bg-muted/40 transition-all border border-transparent hover:border-border/40"
         >
           <Building2 className="h-4 w-4 text-primary/70" />
-          <span className="text-sm text-foreground/90">{condoName ?? condos.find(c => c.condo_id === condoId)?.condo_name ?? 'Selecionar'}</span>
+          <span className="text-sm text-foreground/90">{condoName ?? condos.find(c => c.condominio_id === condoId)?.condominio_nome ?? 'Selecionar'}</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-1 premium-card border-border">
         {condos.map((condo) => {
-          const isActive = condo.condo_id === condoId;
+          const isActive = condo.condominio_id === condoId;
           return (
             <button
-              key={condo.condo_id}
+              key={condo.condominio_id}
               onClick={() => handleSelect(condo)}
               disabled={isActive || switching}
               className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-all hover:bg-primary/10 hover:text-foreground cursor-pointer disabled:cursor-default disabled:opacity-70"
             >
               <div className="flex flex-1 flex-col items-start gap-0.5">
-                <span className="font-medium text-foreground/90">{condo.condo_name}</span>
+                <span className="font-medium text-foreground/90">{condo.condominio_nome}</span>
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-muted/50 text-muted-foreground border-border/50">
-                  {condo.role}
+                  {condo.papel}
                 </Badge>
               </div>
               {isActive && <Check className="h-4 w-4 text-primary shrink-0" />}

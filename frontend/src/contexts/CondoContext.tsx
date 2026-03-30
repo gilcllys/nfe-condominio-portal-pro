@@ -70,14 +70,14 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      const res = await apiFetch('/api/data/condos/active-context/');
+      const res = await apiFetch('/api/condominios/contexto-ativo/');
       const data = await res.json();
 
-      if (data?.condo_id) {
+      if (data?.condominio_id) {
         const newState: CondoState = {
-          condoId: data.condo_id,
-          condoName: data.condo_name ?? null,
-          role: data.role ?? null,
+          condoId: data.condominio_id,
+          condoName: data.condominio_nome ?? null,
+          role: data.papel ?? null,
         };
         setState(newState);
         writeCache(newState);
@@ -94,18 +94,18 @@ export const CondoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const switchCondo = useCallback(async (targetCondoId: string): Promise<boolean> => {
     try {
-      const res = await apiFetch('/api/data/condos/switch/', {
+      const res = await apiFetch('/api/condominios/trocar/', {
         method: 'POST',
-        body: JSON.stringify({ condo_id: targetCondoId }),
+        body: JSON.stringify({ condominio_id: targetCondoId }),
       });
 
       if (!res.ok) return false;
 
       const data = await res.json();
       const newState: CondoState = {
-        condoId: data.condo_id ?? targetCondoId,
-        condoName: data.condo_name ?? null,
-        role: data.role ?? null,
+        condoId: data.condominio_id ?? targetCondoId,
+        condoName: data.condominio_nome ?? null,
+        role: data.papel ?? null,
       };
       setState(newState);
       writeCache(newState);

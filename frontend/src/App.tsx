@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CondoProvider } from "@/contexts/CondoContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -26,6 +26,8 @@ import ResetPassword from "./pages/ResetPassword";
 import Contratos from "./pages/Contratos";
 import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
+import Onboarding from "./pages/Onboarding";
 import { BillingGuard } from "@/components/BillingGuard";
 
 const queryClient = new QueryClient();
@@ -41,6 +43,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/cadastro" element={<Cadastro />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/no-condo" element={<NoCondo />} />
               <Route
@@ -67,7 +70,7 @@ const App = () => (
                 <Route path="/configuracoes" element={<Configuracoes />} />
                 </Route>
               </Route>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<LandingPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </CondoProvider>

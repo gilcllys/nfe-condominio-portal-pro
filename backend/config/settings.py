@@ -18,16 +18,34 @@ ALLOWED_HOSTS = [
 # ─── Apps ─────────────────────────────────────────────────────────────────────
 
 INSTALLED_APPS = [
+    # Django core
+    "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
+    # Third-party
     "corsheaders",
     "rest_framework",
-    "core",
-    "subscriptions",
-    "invoices",
-    "providers",
-    "condos",
-    "notifications",
+    "rest_framework_simplejwt",
+    # Apps internos
+    "common",
+    "contas",
+    "condominios",
+    "moradores",
+    "chamados",
+    "ordens",
+    "fiscal",
+    "estoque",
+    "fornecedores",
+    "notificacoes",
+    "assinaturas",
+]
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+
+AUTH_USER_MODEL = "contas.Usuario"
+
+AUTHENTICATION_BACKENDS = [
+    "contas.backends.EmailBackend",
 ]
 
 MIDDLEWARE = [
@@ -54,7 +72,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # ─── Database ─────────────────────────────────────────────────────────────────
-# Connects to the Postgres database (schema public).
 
 DATABASES = {
     "default": {
@@ -71,7 +88,7 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "core.authentication.SessionTokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -80,6 +97,21 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
     ],
     "UNAUTHENTICATED_USER": None,
+}
+
+# ─── JWT (Simple JWT) ─────────────────────────────────────────────────────────
+
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "TOKEN_OBTAIN_SERIALIZER": "contas.serializers.TokenObtainPairCustomSerializer",
 }
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────

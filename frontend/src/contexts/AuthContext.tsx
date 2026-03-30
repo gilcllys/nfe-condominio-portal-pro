@@ -1,14 +1,15 @@
-import { apiFetch, authApi, getStoredTokens } from '@/lib/api';
+import { authApi, getStoredTokens } from '@/lib/api';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface AuthUser {
   id: string;
   email?: string;
+  nome_completo?: string;
   [key: string]: any;
 }
 
 interface AuthContextType {
-  session: { user: AuthUser; access_token: string } | null;
+  session: { user: AuthUser; access: string } | null;
   user: AuthUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -24,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<{ user: AuthUser; access_token: string } | null>(null);
+  const [session, setSession] = useState<{ user: AuthUser; access: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,8 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check stored tokens on mount
     const tokens = getStoredTokens();
-    if (tokens?.access_token && tokens.user) {
-      setSession({ user: tokens.user, access_token: tokens.access_token });
+    if (tokens?.access && tokens.user) {
+      setSession({ user: tokens.user, access: tokens.access });
     }
     setLoading(false);
 
@@ -54,8 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           try {
             const t = JSON.parse(e.newValue);
-            if (t.access_token && t.user) {
-              setSession({ user: t.user, access_token: t.access_token });
+            if (t.access && t.user) {
+              setSession({ user: t.user, access: t.access });
             }
           } catch {}
         }
@@ -66,14 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
-    const token = localStorage.getItem('nfe_vigia_session_token');
-    if (token) {
-      await apiFetch('/api/data/user-sessions/', {
-        method: 'DELETE',
-        body: JSON.stringify({ session_token: token }),
-      }).catch(() => {});
-      localStorage.removeItem('nfe_vigia_session_token');
-    }
     try { localStorage.removeItem('nfe_vigia_active_condo'); } catch {}
     await authApi.logout();
     setSession(null);

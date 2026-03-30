@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-// No auth/apiFetch needed — signup uses unauthenticated fetch to backend
+import { authApi } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string || 'http://localhost:8000';
 
 export default function Cadastro() {
   const [searchParams] = useSearchParams();
@@ -19,7 +21,6 @@ export default function Cadastro() {
   const [condoName, setCondoName] = useState('');
   const [condoId, setCondoId] = useState('');
   const [invalidCode, setInvalidCode] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   // Form fields
   const [fullName, setFullName] = useState('');
@@ -51,15 +52,15 @@ export default function Cadastro() {
       }
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/data/condos/validate-invite/?code=${encodeURIComponent(inviteCode)}`,
+          `${API_BASE_URL}/api/condominios/validar-convite/?codigo=${encodeURIComponent(inviteCode)}`,
         );
         if (!res.ok) {
           setInvalidCode(true);
         } else {
           const data = await res.json();
-          if (data?.id && data?.name) {
+          if (data?.id && data?.nome) {
             setCondoId(data.id);
-            setCondoName(data.name);
+            setCondoName(data.nome);
           } else {
             setInvalidCode(true);
           }
@@ -87,45 +88,41 @@ export default function Cadastro() {
     setSaving(true);
 
     try {
+      // Parse full name into first/last
+      const nameParts = fullName.trim().split(/\s+/);
+      const primeiroNome = nameParts[0] || '';
+      const sobrenome = nameParts.slice(1).join(' ') || '';
+
       // Build residence fields
-      let blockVal: string | null = null;
-      let unitVal: string | null = null;
-      let unitLabelVal: string | null = null;
+      let blockVal: string | undefined;
+      let unitVal: string | undefined;
+      let unitLabelVal: string | undefined;
 
       if (residenceType === 'apartamento') {
-        blockVal = block.trim() || null;
-        unitVal = unitNumber.trim() || null;
+        blockVal = block.trim() || undefined;
+        unitVal = unitNumber.trim() || undefined;
       } else {
-        blockVal = street.trim() || null;
-        unitVal = houseNumber.trim() || null;
-        unitLabelVal = complement.trim() || null;
+        blockVal = street.trim() || undefined;
+        unitVal = houseNumber.trim() || undefined;
+        unitLabelVal = complement.trim() || undefined;
       }
 
-      // Use the composite signup-register endpoint
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api/data/signup-register/`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-            redirect_to: window.location.origin,
-            condo_id: condoId,
-            full_name: fullName.trim(),
-            cpf_rg: document.trim() || null,
-            birth_date: birthDate || null,
-            block: blockVal,
-            unit: unitVal,
-            unit_label: unitLabelVal,
-          }),
-        },
-      );
+      const result = await authApi.signUp({
+        email: email.trim(),
+        senha: password,
+        primeiro_nome: primeiroNome,
+        sobrenome,
+        condominio_id: condoId,
+        cpf: document.trim() || undefined,
+        data_nascimento: birthDate || undefined,
+        bloco: blockVal,
+        unidade: unitVal,
+        unidade_label: unitLabelVal,
+      });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        const msg = errData?.error || errData?.message || '';
-        if (msg.toLowerCase().includes('user already registered') || msg.toLowerCase().includes('already registered')) {
+      if (!result.ok) {
+        const msg = result.data?.error || result.data?.detail || '';
+        if (msg.toLowerCase().includes('ja cadastrado') || msg.toLowerCase().includes('already')) {
           toast({ title: 'Este e-mail já está cadastrado', description: 'Tente fazer login ou recupere sua senha.', variant: 'destructive' });
         } else {
           toast({ title: 'Erro ao criar conta', description: msg || 'Tente novamente.', variant: 'destructive' });
@@ -134,7 +131,9 @@ export default function Cadastro() {
         return;
       }
 
-      setSubmitted(true);
+      // Cadastro com sucesso — tokens JWT ja foram salvos pelo authApi.signUp()
+      toast({ title: 'Conta criada com sucesso!', description: 'Aguarde a aprovação do síndico para acessar o sistema.' });
+      navigate('/login', { replace: true });
     } catch {
       toast({ title: 'Erro inesperado', description: 'Tente novamente.', variant: 'destructive' });
     } finally {
@@ -161,29 +160,6 @@ export default function Cadastro() {
             <CardTitle>Link inválido</CardTitle>
             <CardDescription>
               Este link de convite é inválido ou expirou. Solicite um novo link ao síndico do seu condomínio.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" onClick={() => navigate('/login')} className="w-full">
-              Voltar ao login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <div className="mx-auto mb-2">
-              <CheckCircle2 className="h-12 w-12 text-green-600" />
-            </div>
-            <CardTitle>Cadastro realizado!</CardTitle>
-            <CardDescription>
-              Aguarde a aprovação do síndico. Você receberá um e-mail quando seu acesso for liberado.
             </CardDescription>
           </CardHeader>
           <CardContent>

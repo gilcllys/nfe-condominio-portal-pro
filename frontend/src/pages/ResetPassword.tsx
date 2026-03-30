@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi, setStoredTokens } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,18 +17,16 @@ export default function ResetPassword() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    // The password-reset link from Supabase GoTrue arrives with tokens in the URL hash.
-    // We extract them and store so authApi.updateUser can use them.
+    // Check if we have a reset token in the URL (query param or hash)
     const hash = window.location.hash;
     if (hash) {
       const params = new URLSearchParams(hash.replace('#', ''));
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
       if (accessToken) {
-        // Store tokens so apiFetch can use them for the updateUser call
         setStoredTokens({
-          access_token: accessToken,
-          refresh_token: refreshToken || '',
+          access: accessToken,
+          refresh: refreshToken || '',
         });
         setReady(true);
         return;
@@ -37,7 +35,7 @@ export default function ResetPassword() {
 
     // Fallback: check if we already have a valid session
     authApi.getSession().then((session) => {
-      if (session?.access_token) setReady(true);
+      if (session?.access) setReady(true);
     });
   }, []);
 
@@ -53,7 +51,7 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      const result = await authApi.updateUser({ password });
+      const result = await authApi.updateUser({ senha: password });
       if (!result.ok) throw new Error('Failed');
       toast({ title: 'Senha alterada com sucesso!', description: 'Você já pode fazer login com sua nova senha.' });
       navigate('/login', { replace: true });
