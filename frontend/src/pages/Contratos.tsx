@@ -19,17 +19,17 @@ import { differenceInDays, format } from 'date-fns';
 
 interface Contract {
   id: string;
-  title: string;
-  description: string | null;
-  contract_type: string;
-  value: number | null;
-  start_date: string | null;
-  end_date: string | null;
+  titulo: string;
+  descricao: string | null;
+  tipo_contrato: string;
+  valor: number | null;
+  data_inicio: string | null;
+  data_fim: string | null;
   status: string;
-  file_url: string | null;
-  provider_id: string | null;
-  created_at: string;
-  provider_name?: string;
+  url_arquivo: string | null;
+  fornecedor_id: string | null;
+  criado_em: string;
+  fornecedor_name?: string;
 }
 
 interface Provider {
@@ -110,9 +110,9 @@ export default function Contratos() {
     if (!condoId) return;
     setLoading(true);
 
-    const params = new URLSearchParams({ condo_id: condoId, ordering: '-created_at' });
+    const params = new URLSearchParams({ condominio_id: condoId, ordering: '-criado_em' });
     if (filterStatus !== 'ALL') params.append('status', filterStatus);
-    if (filterType !== 'ALL') params.append('contract_type', filterType);
+    if (filterType !== 'ALL') params.append('tipo_contrato', filterType);
 
     const [contractsRes, providersRes] = await Promise.all([
       apiFetch(`/api/contratos/?${params}`),
@@ -132,7 +132,7 @@ export default function Contratos() {
     setContracts(
       (contractsList as any[]).map(c => ({
         ...c,
-        provider_name: c.provider_id ? provMap.get(c.provider_id) ?? '—' : '—',
+        fornecedor_name: c.fornecedor_id ? provMap.get(c.fornecedor_id) ?? '—' : '—',
       }))
     );
     setLoading(false);
@@ -150,16 +150,16 @@ export default function Contratos() {
       const res = await apiFetch('/api/contratos/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          title: form.title.trim(),
-          description: form.description.trim() || null,
-          contract_type: form.contract_type,
-          value: form.value ? parseFloat(form.value) : null,
-          start_date: form.start_date || null,
-          end_date: form.end_date || null,
-          provider_id: form.provider_id || null,
+          condominio_id: condoId,
+          titulo: form.title.trim(),
+          descricao: form.description.trim() || null,
+          tipo_contrato: form.contract_type,
+          valor: form.value ? parseFloat(form.value) : null,
+          data_inicio: form.start_date || null,
+          data_fim: form.end_date || null,
+          fornecedor_id: form.provider_id || null,
           status: 'RASCUNHO',
-          created_by: user?.id,
+          criado_por_id: user?.id,
         }),
       });
       if (!res.ok) {
@@ -241,8 +241,8 @@ export default function Contratos() {
 
       // Notificar aprovadores por e-mail (fire-and-forget)
       void sendApprovalEmails('CONTRATO', records.map((r: any) => r.approver_user_id), {
-        title: contract.title,
-        amount: contract.value ?? undefined,
+        title: contract.titulo,
+        amount: contract.valor ?? undefined,
         condo_name: condoName ?? condoId ?? '',
       });
 
@@ -325,19 +325,19 @@ export default function Contratos() {
             ) : (
               contracts.map(c => {
                 const statusBadge = getStatusBadge(c.status);
-                const expiryBadge = c.status === 'ATIVO' ? getExpiryBadge(c.end_date) : null;
+                const expiryBadge = c.status === 'ATIVO' ? getExpiryBadge(c.data_fim) : null;
                 return (
                   <TableRow key={c.id}>
-                    <TableCell className="font-medium text-foreground">{c.title}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.provider_name}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-xs">{getTypeBadge(c.contract_type)}</Badge></TableCell>
+                    <TableCell className="font-medium text-foreground">{c.titulo}</TableCell>
+                    <TableCell className="text-muted-foreground">{c.fornecedor_name}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs">{getTypeBadge(c.tipo_contrato)}</Badge></TableCell>
                     <TableCell className="text-foreground">
-                      {c.value != null ? `R$ ${c.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                      {c.valor != null ? `R$ ${c.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
-                      {c.start_date ? format(new Date(c.start_date), 'dd/MM/yy') : '—'}
+                      {c.data_inicio ? format(new Date(c.data_inicio), 'dd/MM/yy') : '—'}
                       {' → '}
-                      {c.end_date ? format(new Date(c.end_date), 'dd/MM/yy') : '—'}
+                      {c.data_fim ? format(new Date(c.data_fim), 'dd/MM/yy') : '—'}
                     </TableCell>
                     <TableCell>
                       <Badge className={`${statusBadge.className} text-[10px]`}>{statusBadge.label}</Badge>

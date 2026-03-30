@@ -28,14 +28,14 @@ interface FiscalDoc {
 
 interface ApprovalVote {
   id: string;
-  approver_role: string;
-  decision: string;
-  voted_at: string | null;
-  justification: string | null;
-  approver_user_id: string;
+  papel_aprovador: string;
+  decisao: string;
+  votado_em: string | null;
+  justificativa: string | null;
+  aprovador_id: string;
 }
 
-const isFinalDecision = (decision: string) => decision === 'aprovado' || decision === 'rejeitado';
+const isFinalDecision = (decisao: string) => decisao === 'aprovado' || decisao === 'rejeitado';
 
 function getDeadlineInfo(createdAt: string, deadlineHours: number | null): { label: string; expired: boolean; hoursLeft: number } {
   if (!deadlineHours) return { label: '—', expired: false, hoursLeft: Infinity };
@@ -100,7 +100,7 @@ export default function AprovacaoDetalhe() {
       setLoading(true);
       const [docRes, votesRes] = await Promise.all([
         apiFetch(`/api/documentos-fiscais/${id}/`),
-        apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${id}&ordering=voted_at`),
+        apiFetch(`/api/aprovacoes-doc-fiscal/?documento_fiscal_id=${id}&ordering=votado_em`),
       ]);
 
       if (docRes.ok) {
@@ -113,9 +113,9 @@ export default function AprovacaoDetalhe() {
         setVotes(
           (votesList as ApprovalVote[]).map((vote) => ({
             ...vote,
-            decision: (!vote.decision || (vote.decision !== 'aprovado' && vote.decision !== 'rejeitado'))
+            decisao: (!vote.decisao || (vote.decisao !== 'aprovado' && vote.decisao !== 'rejeitado'))
               ? 'pendente'
-              : vote.decision,
+              : vote.decisao,
           }))
         );
       }
@@ -149,7 +149,7 @@ export default function AprovacaoDetalhe() {
   const deadline = getDeadlineInfo(doc.created_at, deadlineHours);
 
   const myApproverRole = role === 'ADMIN' ? 'SINDICO' : role;
-  const myVotes = votes.filter(v => v.approver_user_id === internalUserId);
+  const myVotes = votes.filter(v => v.aprovador_id === internalUserId);
   const myVote = myVotes.find(v => isFinalDecision(v.decision)) ?? myVotes[0];
   // Also check if the role's slot already has a final decision (any user of this role voted)
   const roleAlreadyDecided = myApproverRole
@@ -195,7 +195,7 @@ export default function AprovacaoDetalhe() {
       voted_at: new Date().toISOString(),
     };
 
-    const existingPendingVote = votes.find(v => v.approver_user_id === internalUserId);
+    const existingPendingVote = votes.find(v => v.aprovador_id === internalUserId);
 
     try {
       const res = existingPendingVote

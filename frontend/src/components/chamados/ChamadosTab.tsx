@@ -19,45 +19,50 @@ import { useNavigate } from 'react-router-dom';
 
 interface TicketRow {
   id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  category: string | null;
-  unit: string | null;
+  titulo: string;
+  descricao: string | null;
+  categoria: string | null;
   status: string;
-  created_by: string;
-  created_at: string;
-  service_order_id: string | null;
-  close_reason: string | null;
+  aberto_por_id: string;
+  criado_em: string;
+  ordem_servico_id: string | null;
+  motivo_fechamento: string | null;
   creator_name?: string;
 }
 
 interface TicketForm {
-  title: string;
-  description: string;
-  location: string;
-  category: string;
-  unit: string;
+  titulo: string;
+  descricao: string;
+  local: string;
+  categoria: string;
 }
 
-const emptyForm: TicketForm = { title: '', description: '', location: '', category: '', unit: '' };
+const emptyForm: TicketForm = { titulo: '', descricao: '', local: '', categoria: '' };
 
 const CATEGORIES = ['Elétrico', 'Hidráulico', 'Limpeza', 'Segurança', 'Outros'];
 
 const STATUS_LABEL: Record<string, string> = {
   ABERTO: 'Aberto',
+  EM_ANDAMENTO: 'Em Andamento',
   EM_ANALISE: 'Em Análise',
   VIROU_OS: 'Virou OS',
+  RESOLVIDO: 'Resolvido',
   RESPONSABILIDADE_MORADOR: 'Resp. do Morador',
   ENCERRADO: 'Encerrado',
+  CANCELADO: 'Cancelado',
+  PENDENTE_TRIAGEM: 'Pendente Triagem',
 };
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   ABERTO: 'default',
+  EM_ANDAMENTO: 'secondary',
   EM_ANALISE: 'secondary',
   VIROU_OS: 'outline',
+  RESOLVIDO: 'outline',
   RESPONSABILIDADE_MORADOR: 'destructive',
   ENCERRADO: 'outline',
+  CANCELADO: 'destructive',
+  PENDENTE_TRIAGEM: 'default',
 };
 
 interface ChamadosTabProps {
@@ -92,7 +97,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
   // Get internal user id
   useEffect(() => {
     if (!user) return;
-    apiFetch(`/api/auth/usuario/?auth_user_id=${user.id}`)
+    apiFetch(`/api/auth/usuario/`)
       .then(res => res.json())
       .then(data => setInternalUserId(data?.id ?? null))
       .catch(() => setInternalUserId(null));
@@ -107,23 +112,12 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
 
       // MORADOR only sees own tickets
       if (isMorador && internalUserId) {
-        url += `&created_by=${internalUserId}`;
+        url += `&aberto_por=${internalUserId}`;
       }
 
       const res = await apiFetch(url);
       const data = await res.json();
       const rows: TicketRow[] = Array.isArray(data) ? data : data?.results ?? [];
-
-      // Fetch creator names
-      if (rows.length > 0) {
-        const creatorIds = [...new Set(rows.map(r => r.created_by))];
-        const usersRes = await apiFetch(`/api/auth/usuario/?ids=${creatorIds.join(',')}`);
-        const usersData = await usersRes.json();
-        const usersList = Array.isArray(usersData) ? usersData : usersData?.results ?? [];
-        const nameMap: Record<string, string> = {};
-        usersList.forEach((u: any) => { nameMap[u.id] = u.full_name; });
-        rows.forEach(r => { r.creator_name = nameMap[r.created_by] ?? 'Usuário'; });
-      }
 
       setTickets(rows);
     } catch (err) {
@@ -138,7 +132,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
   }, [condoId, internalUserId]);
 
   const filtered = tickets.filter(t =>
-    t.title.toLowerCase().includes(search.toLowerCase())
+    t.titulo?.toLowerCase().includes(search.toLowerCase())
   );
 
   const openCreate = () => {
@@ -158,29 +152,35 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
 
   const handleSave = async () => {
     if (!condoId || !internalUserId) return;
-    if (!form.title.trim() || !form.description.trim() || !form.location.trim()) {
-      toast({ title: 'Título, descrição e local são obrigatórios', variant: 'destructive' });
+    if (!form.titulo.trim() || !form.descricao.trim()) {
+      toast({ title: 'Título e descrição são obrigatórios', variant: 'destructive' });
       return;
     }
 
     setSaving(true);
 
+    // Combinar local na descricao se informado
+    let descricaoFinal = form.descricao.trim();
+    if (form.local.trim()) {
+      descricaoFinal = `Local: ${form.local.trim()}\n\n${descricaoFinal}`;
+    }
+
     try {
       const createRes = await apiFetch('/api/chamados/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          title: form.title.trim(),
-          description: form.description.trim(),
-          location: form.location.trim(),
-          category: form.category || null,
-          unit: form.unit.trim() || null,
+          condominio_id: condoId,
+          titulo: form.titulo.trim(),
+          descricao: descricaoFinal,
+          categoria: form.categoria || null,
           status: 'ABERTO',
-          created_by: internalUserId,
+          aberto_por_id: internalUserId,
         }),
       });
 
       if (!createRes.ok) {
+        const errData = await createRes.json().catch(() => null);
+        console.error('Erro ao criar chamado:', errData);
         toast({ title: 'Erro ao abrir chamado', description: 'Não foi possível salvar. Tente novamente.', variant: 'destructive' });
         setSaving(false);
         return;
@@ -211,7 +211,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
 
   const handleChangeStatus = async (ticketId: string, newStatus: string, reason?: string) => {
     const updatePayload: Record<string, any> = { status: newStatus };
-    if (reason) updatePayload.close_reason = reason;
+    if (reason) updatePayload.motivo_fechamento = reason;
 
     try {
       const res = await apiFetch(`/api/chamados/${ticketId}/`, {
@@ -222,7 +222,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
       if (!res.ok) {
         toast({ title: 'Erro ao atualizar chamado', variant: 'destructive' });
       } else {
-        toast({ title: `Chamado atualizado para "${STATUS_LABEL[newStatus]}"` });
+        toast({ title: `Chamado atualizado para "${STATUS_LABEL[newStatus] ?? newStatus}"` });
         fetchTickets();
         setDetailOpen(false);
         setCloseDialogOpen(false);
@@ -234,7 +234,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
 
   const handleConvertToOS = (ticket: TicketRow) => {
     if (onConvertToOS) {
-      onConvertToOS(ticket.id, ticket.title);
+      onConvertToOS(ticket.id, ticket.titulo);
     }
   };
 
@@ -290,23 +290,21 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
                   <TableHead>Título</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Aberto por</TableHead>
                   <TableHead>Data</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((ticket) => (
                   <TableRow key={ticket.id} className="cursor-pointer" onClick={() => openDetail(ticket)}>
-                    <TableCell className="font-medium">{ticket.title}</TableCell>
-                    <TableCell>{ticket.category ?? '—'}</TableCell>
+                    <TableCell className="font-medium">{ticket.titulo}</TableCell>
+                    <TableCell>{ticket.categoria ?? '—'}</TableCell>
                     <TableCell>
                       <Badge variant={STATUS_VARIANT[ticket.status] ?? 'outline'}>
                         {STATUS_LABEL[ticket.status] ?? ticket.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{ticket.creator_name ?? 'Usuário'}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: ptBR })}
+                      {formatDistanceToNow(new Date(ticket.criado_em), { addSuffix: true, locale: ptBR })}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -326,28 +324,24 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
           <div className="space-y-4 py-2 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label>Título *</Label>
-              <Input value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))} />
+              <Input value={form.titulo} onChange={(e) => setForm(p => ({ ...p, titulo: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Descrição *</Label>
-              <Textarea value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))} />
+              <Textarea value={form.descricao} onChange={(e) => setForm(p => ({ ...p, descricao: e.target.value }))} />
             </div>
             <div className="space-y-2">
-              <Label>Local do problema *</Label>
-              <Input placeholder="Ex: Bloco A, área de lazer" value={form.location} onChange={(e) => setForm(p => ({ ...p, location: e.target.value }))} />
+              <Label>Local do problema</Label>
+              <Input placeholder="Ex: Bloco A, área de lazer" value={form.local} onChange={(e) => setForm(p => ({ ...p, local: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={form.category} onValueChange={(v) => setForm(p => ({ ...p, category: v }))}>
+              <Select value={form.categoria} onValueChange={(v) => setForm(p => ({ ...p, categoria: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Unidade</Label>
-              <Input placeholder="Ex: Apto 203" value={form.unit} onChange={(e) => setForm(p => ({ ...p, unit: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Fotos do problema (até 3)</Label>
@@ -374,7 +368,7 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{detailTicket?.title}</DialogTitle>
+            <DialogTitle>{detailTicket?.titulo}</DialogTitle>
             <DialogDescription>Detalhes do chamado</DialogDescription>
           </DialogHeader>
           {detailTicket && (
@@ -383,42 +377,26 @@ export default function ChamadosTab({ onConvertToOS }: ChamadosTabProps) {
                 <Badge variant={STATUS_VARIANT[detailTicket.status] ?? 'outline'}>
                   {STATUS_LABEL[detailTicket.status] ?? detailTicket.status}
                 </Badge>
-                {detailTicket.category && <Badge variant="outline">{detailTicket.category}</Badge>}
+                {detailTicket.categoria && <Badge variant="outline">{detailTicket.categoria}</Badge>}
               </div>
 
-              {detailTicket.description && (
+              {detailTicket.descricao && (
                 <div className="space-y-1">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Descrição</p>
-                  <p className="text-sm whitespace-pre-wrap">{detailTicket.description}</p>
+                  <p className="text-sm whitespace-pre-wrap">{detailTicket.descricao}</p>
                 </div>
               )}
-              {detailTicket.location && (
-                <div className="space-y-1">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Local</p>
-                  <p className="text-sm">{detailTicket.location}</p>
-                </div>
-              )}
-              {detailTicket.unit && (
-                <div className="space-y-1">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unidade</p>
-                  <p className="text-sm">{detailTicket.unit}</p>
-                </div>
-              )}
-              <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Aberto por</p>
-                <p className="text-sm">{detailTicket.creator_name ?? 'Usuário'}</p>
-              </div>
 
-              {detailTicket.status === 'VIROU_OS' && detailTicket.service_order_id && (
-                <Button variant="link" className="p-0 h-auto" onClick={() => { setDetailOpen(false); navigate(`/ordens-servico/${detailTicket.service_order_id}`); }}>
+              {detailTicket.status === 'VIROU_OS' && detailTicket.ordem_servico_id && (
+                <Button variant="link" className="p-0 h-auto" onClick={() => { setDetailOpen(false); navigate(`/ordens-servico/${detailTicket.ordem_servico_id}`); }}>
                   Ver OS vinculada →
                 </Button>
               )}
 
-              {detailTicket.status === 'RESPONSABILIDADE_MORADOR' && detailTicket.close_reason && (
+              {detailTicket.status === 'RESPONSABILIDADE_MORADOR' && detailTicket.motivo_fechamento && (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-1">
                   <p className="text-xs font-medium uppercase tracking-wider text-destructive">Justificativa</p>
-                  <p className="text-sm whitespace-pre-wrap">{detailTicket.close_reason}</p>
+                  <p className="text-sm whitespace-pre-wrap">{detailTicket.motivo_fechamento}</p>
                 </div>
               )}
 

@@ -19,21 +19,21 @@ import { Plus, Search, Building2, CheckCircle2, AlertTriangle, XCircle, Shield, 
 
 interface Provider {
   id: string;
-  document: string | null;
-  legal_name: string | null;
-  trade_name: string;
-  phone: string | null;
+  documento: string | null;
+  razao_social: string | null;
+  nome_fantasia: string;
+  telefone: string | null;
   email: string | null;
-  address: string | null;
-  neighborhood: string | null;
+  endereco: string | null;
+  bairro: string | null;
   cidade: string | null;
   estado: string | null;
-  zip_code: string | null;
+  cep: string | null;
   tipo_servico: string | null;
   observacoes: string | null;
   status: string;
-  risk_score: number | null;
-  created_at: string;
+  pontuacao_risco: number | null;
+  criado_em: string;
 }
 
 interface RiskAnalysis {
@@ -84,15 +84,15 @@ export default function Prestadores() {
   const [searchingCnpj, setSearchingCnpj] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    document: '', legal_name: '', trade_name: '', phone: '', email: '',
-    address: '', neighborhood: '', cidade: '', estado: '', zip_code: '', tipo_servico: '', observacoes: '',
+    documento: '', razao_social: '', nome_fantasia: '', telefone: '', email: '',
+    endereco: '', bairro: '', cidade: '', estado: '', cep: '', tipo_servico: '', observacoes: '',
   });
 
   const fetchProviders = async () => {
     if (!condoId) return;
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/fornecedores/?condominio_id=${condoId}&ordering=trade_name`);
+      const res = await apiFetch(`/api/fornecedores/?condominio_id=${condoId}&ordering=nome_fantasia`);
       const data = res.ok ? await res.json() : [];
       setProviders(Array.isArray(data) ? data : data.results ?? []);
     } catch {
@@ -121,16 +121,16 @@ export default function Prestadores() {
       const data = await res.json();
       const parts = [data.logradouro, data.numero, data.complemento].filter(Boolean);
       setForm({
-        document: data.cnpj || cnpj,
-        legal_name: data.razao_social || '',
-        trade_name: data.nome_fantasia || data.razao_social || '',
-        phone: data.ddd_telefone_1 || '',
+        documento: data.cnpj || cnpj,
+        razao_social: data.razao_social || '',
+        nome_fantasia: data.nome_fantasia || data.razao_social || '',
+        telefone: data.ddd_telefone_1 || '',
         email: data.email || '',
-        address: parts.join(', '),
-        neighborhood: data.bairro || '',
+        endereco: parts.join(', '),
+        bairro: data.bairro || '',
         cidade: data.municipio || '',
         estado: data.uf || '',
-        zip_code: data.cep || '',
+        cep: data.cep || '',
         tipo_servico: form.tipo_servico,
         observacoes: form.observacoes,
       });
@@ -142,7 +142,7 @@ export default function Prestadores() {
   };
 
   const handleSave = async () => {
-    if (!form.trade_name.trim()) {
+    if (!form.nome_fantasia.trim()) {
       toast({ title: 'Nome/Razão Social é obrigatório', variant: 'destructive' });
       return;
     }
@@ -152,17 +152,17 @@ export default function Prestadores() {
       const res = await apiFetch('/api/fornecedores/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          document: form.document || null,
-          legal_name: form.legal_name || null,
-          trade_name: form.trade_name,
-          phone: form.phone || null,
+          condominio_id: condoId,
+          documento: form.documento || null,
+          razao_social: form.razao_social || null,
+          nome_fantasia: form.nome_fantasia,
+          telefone: form.telefone || null,
           email: form.email || null,
-          address: form.address || null,
-          neighborhood: form.neighborhood || null,
+          endereco: form.endereco || null,
+          bairro: form.bairro || null,
           cidade: form.cidade || null,
           estado: form.estado || null,
-          zip_code: form.zip_code || null,
+          cep: form.cep || null,
           tipo_servico: form.tipo_servico || null,
           observacoes: form.observacoes || null,
         }),
@@ -183,7 +183,7 @@ export default function Prestadores() {
 
   const resetForm = () => {
     setCnpjSearch('');
-    setForm({ document: '', legal_name: '', trade_name: '', phone: '', email: '', address: '', neighborhood: '', cidade: '', estado: '', zip_code: '', tipo_servico: '', observacoes: '' });
+    setForm({ documento: '', razao_social: '', nome_fantasia: '', telefone: '', email: '', endereco: '', bairro: '', cidade: '', estado: '', cep: '', tipo_servico: '', observacoes: '' });
   };
 
   const openDetail = async (provider: Provider) => {
@@ -207,13 +207,13 @@ export default function Prestadores() {
   };
 
   const handleAnalyzeRisk = async () => {
-    if (!detailProvider?.document) {
+    if (!detailProvider?.documento) {
       toast({ title: 'Prestador sem CNPJ cadastrado', variant: 'destructive' });
       return;
     }
     setAnalyzingRisk(true);
     try {
-      const cnpj = detailProvider.document.replace(/\D/g, '');
+      const cnpj = detailProvider.documento.replace(/\D/g, '');
       const cnpjRes = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
       if (!cnpjRes.ok) throw new Error('Não foi possível consultar CNPJ');
       const cnpjData = await cnpjRes.json();
@@ -252,7 +252,7 @@ export default function Prestadores() {
       // Update provider risk score
       await apiFetch(`/api/fornecedores/${detailProvider.id}/`, {
         method: 'PATCH',
-        body: JSON.stringify({ risk_score: data.score ?? 0 }),
+        body: JSON.stringify({ pontuacao_risco: data.score ?? 0 }),
       });
 
       setRiskAnalysis({
@@ -268,7 +268,7 @@ export default function Prestadores() {
         analyzed_at: new Date().toISOString(),
       });
 
-      setDetailProvider(prev => prev ? { ...prev, risk_score: data.score ?? 0 } : null);
+      setDetailProvider(prev => prev ? { ...prev, pontuacao_risco: data.score ?? 0 } : null);
       toast({ title: 'Análise de risco concluída' });
       fetchProviders();
     } catch (e: any) {
@@ -326,12 +326,12 @@ export default function Prestadores() {
               </TableHeader>
               <TableBody>
                 {providers.map(p => {
-                  const risk = getRiskBadge(p.risk_score);
+                  const risk = getRiskBadge(p.pontuacao_risco);
                   return (
                     <TableRow key={p.id} className="cursor-pointer" onClick={() => openDetail(p)}>
-                      <TableCell className="font-medium">{p.trade_name}</TableCell>
+                      <TableCell className="font-medium">{p.nome_fantasia}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {p.document ? p.document.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '—'}
+                        {p.documento ? p.documento.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '—'}
                       </TableCell>
                       <TableCell>{p.tipo_servico || '—'}</TableCell>
                       <TableCell>
@@ -385,15 +385,15 @@ export default function Prestadores() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2 col-span-2">
                 <Label>Razão Social *</Label>
-                <Input value={form.legal_name} onChange={e => setForm(f => ({ ...f, legal_name: e.target.value }))} />
+                <Input value={form.razao_social} onChange={e => setForm(f => ({ ...f, razao_social: e.target.value }))} />
               </div>
               <div className="space-y-2 col-span-2">
                 <Label>Nome Fantasia *</Label>
-                <Input value={form.trade_name} onChange={e => setForm(f => ({ ...f, trade_name: e.target.value }))} />
+                <Input value={form.nome_fantasia} onChange={e => setForm(f => ({ ...f, nome_fantasia: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Telefone</Label>
-                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                <Input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
@@ -401,11 +401,11 @@ export default function Prestadores() {
               </div>
               <div className="space-y-2 col-span-2">
                 <Label>Endereço</Label>
-                <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+                <Input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Bairro</Label>
-                <Input value={form.neighborhood} onChange={e => setForm(f => ({ ...f, neighborhood: e.target.value }))} />
+                <Input value={form.bairro} onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Cidade</Label>

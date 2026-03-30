@@ -126,9 +126,9 @@ export default function NFEntryTab() {
       const base64 = await fileToBase64(file);
       const mediaType = file.type || 'image/jpeg';
 
-      const response = await apiFetch('/api/invoices/extract/', {
+      const response = await apiFetch('/api/documentos-fiscais/extrair/', {
         method: 'POST',
-        body: JSON.stringify({ fileBase64: base64, mediaType }),
+        body: JSON.stringify({ arquivoBase64: base64, tipoMidia: mediaType }),
       });
 
       if (!response.ok) {
@@ -229,16 +229,16 @@ export default function NFEntryTab() {
       const fdRes = await apiFetch('/api/documentos-fiscais/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          document_type: 'NFE',
-          source_type: 'UPLOAD',
-          supplier: nfData.fornecedor.trim(),
-          number: nfData.numero_nf.trim(),
-          issue_date: nfData.data_emissao || null,
-          amount: nfData.valor_total,
+          condominio_id: condoId,
+          tipo_documento: 'NFE',
+          tipo_fonte: 'UPLOAD',
+          fornecedor: nfData.fornecedor.trim(),
+          numero: nfData.numero_nf.trim(),
+          data_emissao: nfData.data_emissao || null,
+          valor: nfData.valor_total,
           status: 'PENDENTE',
-          file_url: fileUrl,
-          created_by: internalUser.id,
+          url_arquivo: fileUrl,
+          criado_por_id: internalUser.id,
         }),
       });
 

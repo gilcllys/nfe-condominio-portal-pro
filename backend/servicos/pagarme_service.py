@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 
 PAGARME_BASE = "https://api.pagar.me/core/v5"
 
-# Monthly plan constants (R$ 365,00)
-PLAN_AMOUNT_CENTS = 36500
-PLAN_INTERVAL = "month"
-PLAN_INTERVAL_COUNT = 1
-PLAN_DESCRIPTION = "NFe Vigia — Assinatura Mensal"
+# Plan pricing constants
+PLAN_MENSAL_CENTS = 35600       # R$ 356,00/mes
+PLAN_ANUAL_CENTS = 384480       # R$ 3.844,80/ano (R$ 320,40/mes — 10% desconto)
+PLAN_DESCRIPTION_MENSAL = "NFe Vigia — Assinatura Mensal"
+PLAN_DESCRIPTION_ANUAL = "NFe Vigia — Assinatura Anual"
 
 
 def _auth_header() -> str:
@@ -65,12 +65,33 @@ def create_customer(customer_data: dict) -> dict:
     return resp.json()
 
 
-def create_subscription(customer_id: str, card_token: str, condo_id: str, condo_name: str) -> dict:
-    """Create a monthly credit_card subscription on Pagar.me and return the response."""
+def create_subscription(
+    customer_id: str,
+    card_token: str,
+    condo_id: str,
+    condo_name: str,
+    plano: str = "mensal",
+) -> dict:
+    """Create a credit_card subscription on Pagar.me and return the response.
+
+    Args:
+        plano: "mensal" or "anual"
+    """
+    if plano == "anual":
+        amount = PLAN_ANUAL_CENTS
+        interval = "year"
+        interval_count = 1
+        description = PLAN_DESCRIPTION_ANUAL
+    else:
+        amount = PLAN_MENSAL_CENTS
+        interval = "month"
+        interval_count = 1
+        description = PLAN_DESCRIPTION_MENSAL
+
     payload = {
         "payment_method": "credit_card",
-        "interval": PLAN_INTERVAL,
-        "interval_count": PLAN_INTERVAL_COUNT,
+        "interval": interval,
+        "interval_count": interval_count,
         "billing_type": "prepaid",
         "installments": 1,
         "currency": "BRL",
@@ -78,10 +99,12 @@ def create_subscription(customer_id: str, card_token: str, condo_id: str, condo_
         "card_token": card_token,
         "items": [
             {
-                "description": PLAN_DESCRIPTION,
-                "amount": PLAN_AMOUNT_CENTS,
+                "description": description,
                 "quantity": 1,
-                "cycles": 0,
+                "pricing_scheme": {
+                    "scheme_type": "unit",
+                    "price": amount,
+                },
             },
         ],
         "metadata": {

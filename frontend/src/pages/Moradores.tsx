@@ -18,27 +18,30 @@ import InviteLinkDialog from '@/components/moradores/InviteLinkDialog';
 import PendingApprovalsTab from '@/components/moradores/PendingApprovalsTab';
 
 interface ResidentRow {
-  resident_id: string;
-  condo_id: string;
-  block: string | null;
-  unit: string | null;
-  unit_label: string | null;
-  full_name: string;
+  id: string;
+  condominio_id: string;
+  bloco: string | null;
+  unidade_label: string | null;
+  nome_completo: string;
+  documento: string | null;
   email: string | null;
-  phone: string | null;
-  matched_user_id: string | null;
-  matched_user_email: string | null;
-  matched_role: string | null;
+  telefone: string | null;
+  tipo_residencia: string | null;
+  unidade_id: string | null;
+  criado_em: string | null;
+  atualizado_em: string | null;
+  usuario_vinculado_id: string | null;
+  usuario_vinculado_email: string | null;
+  papel_vinculado: string | null;
 }
 
 interface ResidentForm {
-  full_name: string;
-  document: string;
+  nome_completo: string;
+  documento: string;
   email: string;
-  phone: string;
-  block: string;
-  unit: string;
-  unit_label: string;
+  telefone: string;
+  bloco: string;
+  unidade_label: string;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -59,10 +62,10 @@ const ROLE_COLORS: Record<string, string> = {
   MORADOR: 'bg-muted/40 text-muted-foreground border-border',
 };
 
-const emptyForm: ResidentForm = { full_name: '', document: '', email: '', phone: '', block: '', unit: '', unit_label: '' };
+const emptyForm: ResidentForm = { nome_completo: '', documento: '', email: '', telefone: '', bloco: '', unidade_label: '' };
 
 const formatAddress = (r: ResidentRow) => {
-  return [r.block, r.unit, r.unit_label].filter(Boolean).join(' · ') || '—';
+  return [r.bloco, r.unidade_label].filter(Boolean).join(' · ') || '—';
 };
 
 export default function Moradores() {
@@ -104,37 +107,37 @@ export default function Moradores() {
 
   useEffect(() => { fetchResidents(); }, [condoId]);
 
-  const filtered = residents.filter((r) => r.full_name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = residents.filter((r) => r.nome_completo.toLowerCase().includes(search.toLowerCase()));
 
   const openCreate = () => { setEditingResident(null); setForm(emptyForm); setModalOpen(true); };
   const openEdit = (resident: ResidentRow) => {
     setEditingResident(resident);
-    setForm({ full_name: resident.full_name, document: '', email: resident.email ?? '', phone: resident.phone ?? '', block: resident.block ?? '', unit: resident.unit ?? '', unit_label: resident.unit_label ?? '' });
+    setForm({ nome_completo: resident.nome_completo, documento: resident.documento ?? '', email: resident.email ?? '', telefone: resident.telefone ?? '', bloco: resident.bloco ?? '', unidade_label: resident.unidade_label ?? '' });
     setModalOpen(true);
   };
   const openDelete = (resident: ResidentRow) => { setDeletingResident(resident); setDeleteDialogOpen(true); };
   const openRoleChange = (resident: ResidentRow) => {
-    setRoleTarget({ name: resident.full_name, role: resident.matched_role ?? null, userId: resident.matched_user_id ?? null });
+    setRoleTarget({ name: resident.nome_completo, role: resident.papel_vinculado ?? null, userId: resident.usuario_vinculado_id ?? null });
     setRoleDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!condoId || !form.full_name.trim()) { toast({ title: 'Nome completo é obrigatório', variant: 'destructive' }); return; }
+    if (!condoId || !form.nome_completo.trim()) { toast({ title: 'Nome completo é obrigatório', variant: 'destructive' }); return; }
     setSaving(true);
     const payload = {
-      condo_id: condoId, full_name: form.full_name.trim(), document: form.document.trim() || null,
-      email: form.email.trim() || null, phone: form.phone.trim() || null, block: form.block.trim() || null,
-      unit: form.unit.trim() || null, unit_label: form.unit_label.trim() || null, unit_id: null,
+      condominio_id: condoId, nome_completo: form.nome_completo.trim(), documento: form.documento.trim() || null,
+      email: form.email.trim() || null, telefone: form.telefone.trim() || null, bloco: form.bloco.trim() || null,
+      unidade_label: form.unidade_label.trim() || null, unidade_id: null,
     };
 
     if (editingResident) {
       try {
-        const res = await apiFetch(`/api/moradores/${editingResident.resident_id}/`, {
+        const res = await apiFetch(`/api/moradores/${editingResident.id}/`, {
           method: 'PATCH',
           body: JSON.stringify(payload),
         });
         if (!res.ok) throw new Error('Erro ao atualizar morador');
-        await logActivity({ condoId, action: 'update', entity: 'resident', entityId: editingResident.resident_id, description: `Morador "${form.full_name.trim()}" atualizado` });
+        await logActivity({ condoId, action: 'update', entity: 'resident', entityId: editingResident.id, description: `Morador "${form.nome_completo.trim()}" atualizado` });
         toast({ title: 'Morador atualizado com sucesso' }); setModalOpen(false); fetchResidents();
       } catch {
         toast({ title: 'Erro ao atualizar morador', variant: 'destructive' });
@@ -147,7 +150,7 @@ export default function Moradores() {
         });
         if (!res.ok) throw new Error('Erro ao cadastrar morador');
         const inserted = await res.json();
-        await logActivity({ condoId, action: 'create', entity: 'resident', entityId: inserted?.id ?? '', description: `Morador "${form.full_name.trim()}" cadastrado` });
+        await logActivity({ condoId, action: 'create', entity: 'resident', entityId: inserted?.id ?? '', description: `Morador "${form.nome_completo.trim()}" cadastrado` });
         toast({ title: 'Morador cadastrado com sucesso' }); setModalOpen(false); fetchResidents();
       } catch {
         toast({ title: 'Erro ao cadastrar morador', variant: 'destructive' });
@@ -159,9 +162,9 @@ export default function Moradores() {
   const handleDelete = async () => {
     if (!deletingResident || !condoId) return;
     try {
-      const res = await apiFetch(`/api/moradores/${deletingResident.resident_id}/`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/moradores/${deletingResident.id}/`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Erro ao excluir morador');
-      await logActivity({ condoId, action: 'delete', entity: 'resident', entityId: deletingResident.resident_id, description: `Morador "${deletingResident.full_name}" excluído` });
+      await logActivity({ condoId, action: 'delete', entity: 'resident', entityId: deletingResident.id, description: `Morador "${deletingResident.nome_completo}" excluído` });
       toast({ title: 'Morador excluído com sucesso' }); fetchResidents();
     } catch {
       toast({ title: 'Erro ao excluir morador', variant: 'destructive' });

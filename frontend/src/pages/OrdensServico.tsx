@@ -24,40 +24,40 @@ import ChamadosTab from '@/components/chamados/ChamadosTab';
 
 interface ServiceOrder {
   id: string;
-  condo_id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
+  condominio_id: string;
+  titulo: string;
+  descricao: string | null;
+  localizacao: string | null;
   status: string;
-  priority: string | null;
-  created_by: string;
-  created_at: string;
-  photo_count: number;
-  is_emergency: boolean;
+  prioridade: string | null;
+  criado_por_id: string;
+  criado_em: string;
+  contagem_fotos: number;
+  emergencial: boolean;
 }
 
 interface Provider {
   id: string;
-  trade_name: string;
+  nome_fantasia: string;
 }
 
 interface Ticket {
   id: string;
-  title: string;
+  titulo: string;
 }
 
 interface SOForm {
-  title: string;
-  description: string;
-  location: string;
-  priority: string;
-  executor_type: string;
+  titulo: string;
+  descricao: string;
+  localizacao: string;
+  prioridade: string;
+  tipo_executor: string;
   photo_observation: string;
-  provider_id: string;
-  ticket_id: string;
+  fornecedor_id: string;
+  chamado_id: string;
 }
 
-const emptyForm: SOForm = { title: '', description: '', location: '', priority: 'BAIXA', executor_type: 'PRESTADOR_EXTERNO', photo_observation: '', provider_id: '', ticket_id: '' };
+const emptyForm: SOForm = { titulo: '', descricao: '', localizacao: '', prioridade: 'BAIXA', tipo_executor: 'PRESTADOR_EXTERNO', photo_observation: '', fornecedor_id: '', chamado_id: '' };
 
 const statusLabel: Record<string, string> = {
   ABERTA: 'Aberta',
@@ -121,7 +121,7 @@ export default function OrdensServico() {
 
   useEffect(() => {
     if (!condoId) return;
-    apiFetch(`/api/fornecedores/?condominio_id=${condoId}&ordering=trade_name`).then(async (res) => {
+    apiFetch(`/api/fornecedores/?condominio_id=${condoId}&ordering=nome_fantasia`).then(async (res) => {
       if (!res.ok) return;
       const data = await res.json();
       setProviders(Array.isArray(data) ? data : data.results ?? []);

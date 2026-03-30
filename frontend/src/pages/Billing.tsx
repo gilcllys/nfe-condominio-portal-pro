@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Shield,
   CalendarDays,
+  Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -25,12 +26,14 @@ import { ptBR } from 'date-fns/locale';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'canceled' | null;
+type Plano = 'mensal' | 'anual';
 
-interface CondoBillingInfo {
-  name: string;
-  subscription_status: SubscriptionStatus;
-  subscription_id: string | null;
-  subscription_expires_at: string | null;
+interface StatusInfo {
+  status: SubscriptionStatus;
+  expira_em: string | null;
+  dias_restantes: number | null;
+  assinatura_id: string | null;
+  trial_expirado: boolean;
 }
 
 interface CardForm {
@@ -50,6 +53,12 @@ interface CustomerForm {
 
 const emptyCard: CardForm = { number: '', holder_name: '', exp_month: '', exp_year: '', cvv: '' };
 const emptyCustomer: CustomerForm = { name: '', email: '', document: '', phone: '' };
+
+// ─── Pricing ──────────────────────────────────────────────────────────────────
+
+const PRECO_MENSAL = 356;
+const PRECO_ANUAL_TOTAL = 3844.80;
+const PRECO_ANUAL_MES = 320.40;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -103,7 +112,7 @@ const STATUS_CONFIG: Record<
     label: 'Período de teste',
     color: 'bg-primary/15 text-primary border-primary/30',
     icon: Shield,
-    description: 'Você está no período gratuito. Assine para continuar usando após o período de avaliação.',
+    description: 'Você está no período gratuito de 7 dias. Assine para continuar usando após o período de avaliação.',
   },
   active: {
     label: 'Ativa',
@@ -132,11 +141,12 @@ export default function Billing() {
   const { condoId, condoName } = useCondo();
   const { toast } = useToast();
 
-  const [billingInfo, setBillingInfo] = useState<CondoBillingInfo | null>(null);
+  const [statusInfo, setStatusInfo] = useState<StatusInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
 
   const [card, setCard] = useState<CardForm>(emptyCard);
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
+  const [plano, setPlano] = useState<Plano>('mensal');
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
@@ -145,20 +155,15 @@ export default function Billing() {
     if (!condoId) return;
     setLoadingInfo(true);
     try {
-      const res = await apiFetch(`/api/condominios/${condoId}/`);
+      const res = await apiFetch(`/api/assinaturas/status/?condominio_id=${condoId}`);
       if (res.ok) {
         const data = await res.json();
-        setBillingInfo({
-          name: data.name,
-          subscription_status: data.subscription_status,
-          subscription_id: data.subscription_id,
-          subscription_expires_at: data.subscription_expires_at,
-        } as CondoBillingInfo);
+        setStatusInfo(data as StatusInfo);
       } else {
-        setBillingInfo(null);
+        setStatusInfo(null);
       }
     } catch {
-      setBillingInfo(null);
+      setStatusInfo(null);
     }
     setLoadingInfo(false);
   };
@@ -174,9 +179,16 @@ export default function Billing() {
     }
   }, [user]);
 
-  const status: SubscriptionStatus = billingInfo?.subscription_status ?? null;
-  const statusConfig = status ? STATUS_CONFIG[status] : null;
-  const needsSubscription = status === 'trial' || status === 'past_due' || status === 'canceled';
+  const currentStatus: SubscriptionStatus = statusInfo?.trial_expirado
+    ? 'canceled'
+    : statusInfo?.status ?? null;
+  const statusConfig = currentStatus ? STATUS_CONFIG[currentStatus] : null;
+  const needsSubscription = currentStatus === 'trial' || currentStatus === 'past_due' || currentStatus === 'canceled';
+
+  const precoAtual = plano === 'anual' ? PRECO_ANUAL_MES : PRECO_MENSAL;
+  const precoLabel = plano === 'anual'
+    ? `R$ ${PRECO_ANUAL_MES.toFixed(2).replace('.', ',')}/mês (R$ ${PRECO_ANUAL_TOTAL.toFixed(2).replace('.', ',')}/ano)`
+    : `R$ ${PRECO_MENSAL}/mês`;
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubscribe = async (e: React.FormEvent) => {
@@ -211,11 +223,12 @@ export default function Billing() {
       }
 
       // Step 2: call backend API with token + customer data
-      const res = await apiFetch('/api/subscriptions/create/', {
+      const res = await apiFetch('/api/assinaturas/criar/', {
         method: 'POST',
         body: JSON.stringify({
           card_token: cardToken,
-          condo_id: condoId,
+          condominio_id: condoId,
+          plano,
           customer: {
             name: customer.name.trim(),
             email: customer.email.trim(),
@@ -238,7 +251,7 @@ export default function Billing() {
         return;
       }
 
-      toast({ title: '🎉 Assinatura ativada com sucesso!', description: 'Bem-vindo ao NFe Vigia Pro.' });
+      toast({ title: 'Assinatura ativada com sucesso!', description: 'Bem-vindo ao NFe Vigia Pro.' });
       setShowForm(false);
       setCard(emptyCard);
       await fetchBillingInfo();
@@ -278,19 +291,32 @@ export default function Billing() {
           {statusConfig && (
             <div className="flex items-start gap-3">
               <statusConfig.icon className={`h-5 w-5 mt-0.5 shrink-0 ${
-                status === 'active' ? 'text-emerald-500' :
-                status === 'past_due' ? 'text-warning' :
-                status === 'canceled' ? 'text-destructive' : 'text-primary'
+                currentStatus === 'active' ? 'text-emerald-500' :
+                currentStatus === 'past_due' ? 'text-warning' :
+                currentStatus === 'canceled' ? 'text-destructive' : 'text-primary'
               }`} />
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className={`text-xs ${statusConfig.color}`}>
                     {statusConfig.label}
                   </Badge>
-                  {billingInfo?.subscription_expires_at && status === 'active' && (
+                  {/* Trial countdown */}
+                  {statusInfo?.status === 'trial' && statusInfo.dias_restantes !== null && !statusInfo.trial_expirado && (
+                    <span className="text-xs text-primary flex items-center gap-1 font-medium">
+                      <Clock className="h-3 w-3" />
+                      {statusInfo.dias_restantes} {statusInfo.dias_restantes === 1 ? 'dia restante' : 'dias restantes'}
+                    </span>
+                  )}
+                  {statusInfo?.trial_expirado && (
+                    <span className="text-xs text-destructive flex items-center gap-1 font-medium">
+                      <Clock className="h-3 w-3" />
+                      Período de teste expirado
+                    </span>
+                  )}
+                  {statusInfo?.expira_em && currentStatus === 'active' && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <CalendarDays className="h-3 w-3" />
-                      Próxima cobrança: {format(new Date(billingInfo.subscription_expires_at), "dd/MM/yyyy", { locale: ptBR })}
+                      Próxima cobrança: {format(new Date(statusInfo.expira_em), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
                   )}
                 </div>
@@ -299,9 +325,9 @@ export default function Billing() {
             </div>
           )}
 
-          {billingInfo?.subscription_id && (
+          {statusInfo?.assinatura_id && (
             <div className="text-xs text-muted-foreground font-mono bg-muted/30 rounded px-3 py-2">
-              ID: {billingInfo.subscription_id}
+              ID: {statusInfo.assinatura_id}
             </div>
           )}
 
@@ -313,25 +339,55 @@ export default function Billing() {
             {needsSubscription && !showForm && (
               <Button size="sm" className="gap-1.5" onClick={() => setShowForm(true)}>
                 <CreditCard className="h-3.5 w-3.5" />
-                {status === 'past_due' ? 'Atualizar pagamento' : 'Assinar agora'}
+                {currentStatus === 'past_due' ? 'Atualizar pagamento' : 'Assinar agora'}
               </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Plan info */}
+      {/* Plan selector */}
       <Card className="border-primary/20 bg-primary/3">
-        <CardContent className="pt-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-foreground">NFe Vigia Pro</p>
-              <p className="text-sm text-muted-foreground">Assinatura mensal — acesso completo a todas as funcionalidades</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-foreground">R$ 365</p>
+        <CardContent className="pt-5 space-y-4">
+          <p className="font-semibold text-foreground">NFe Vigia Pro</p>
+          <p className="text-sm text-muted-foreground">Acesso completo a todas as funcionalidades</p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Mensal */}
+            <button
+              type="button"
+              onClick={() => setPlano('mensal')}
+              className={`relative rounded-lg border p-4 text-left transition-all ${
+                plano === 'mensal'
+                  ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                  : 'border-border hover:border-muted-foreground/40'
+              }`}
+            >
+              <p className="text-sm font-medium text-foreground">Mensal</p>
+              <p className="text-2xl font-bold text-foreground mt-1">R$ {PRECO_MENSAL}</p>
               <p className="text-xs text-muted-foreground">/mês</p>
-            </div>
+            </button>
+
+            {/* Anual */}
+            <button
+              type="button"
+              onClick={() => setPlano('anual')}
+              className={`relative rounded-lg border p-4 text-left transition-all ${
+                plano === 'anual'
+                  ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                  : 'border-border hover:border-muted-foreground/40'
+              }`}
+            >
+              <Badge className="absolute -top-2 right-2 bg-emerald-500 text-white text-[10px] px-1.5">
+                10% OFF
+              </Badge>
+              <p className="text-sm font-medium text-foreground">Anual</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                R$ {PRECO_ANUAL_MES.toFixed(0).replace('.', ',')}
+                <span className="text-sm font-normal text-muted-foreground">,{(PRECO_ANUAL_MES % 1 * 100).toFixed(0).padStart(2, '0')}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">/mês (R$ {PRECO_ANUAL_TOTAL.toFixed(2).replace('.', ',')}/ano)</p>
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -491,11 +547,11 @@ export default function Billing() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={submitting} className="gap-2 min-w-[140px]">
+                <Button type="submit" disabled={submitting} className="gap-2 min-w-[180px]">
                   {submitting ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Processando...</>
                   ) : (
-                    <><CreditCard className="h-4 w-4" /> Assinar — R$ 365/mês</>
+                    <><CreditCard className="h-4 w-4" /> Assinar — {precoLabel}</>
                   )}
                 </Button>
               </div>

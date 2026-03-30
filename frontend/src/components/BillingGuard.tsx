@@ -4,10 +4,18 @@ import { apiFetch } from '@/lib/api';
 import { useCondo } from '@/contexts/CondoContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'canceled' | null;
+
+interface StatusInfo {
+  status: SubscriptionStatus;
+  expira_em: string | null;
+  dias_restantes: number | null;
+  assinatura_id: string | null;
+  trial_expirado: boolean;
+}
 
 interface BillingGuardProps {
   children: React.ReactNode;
@@ -15,16 +23,18 @@ interface BillingGuardProps {
 
 /**
  * Wraps protected routes and enforces subscription access:
- * - trial / active  → full access
- * - past_due        → access with top-bar warning
- * - canceled        → redirect to /billing
- * - unknown/loading → allow (fail-open to avoid locking out on transient errors)
+ * - trial (not expired) → full access with countdown banner
+ * - active             → full access
+ * - past_due           → access with warning banner
+ * - trial expired      → redirect to /billing
+ * - canceled           → redirect to /billing
+ * - unknown/loading    → allow (fail-open to avoid locking out on transient errors)
  */
 export function BillingGuard({ children }: BillingGuardProps) {
   const { condoId, loading: condoLoading } = useCondo();
   const location = useLocation();
 
-  const [status, setStatus] = useState<SubscriptionStatus>(null);
+  const [statusInfo, setStatusInfo] = useState<StatusInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,19 +43,19 @@ export function BillingGuard({ children }: BillingGuardProps) {
       return;
     }
 
-    const fetchBilling = async () => {
+    const fetchStatus = async () => {
       setLoading(true);
       try {
-        const res = await apiFetch(`/api/condominios/${condoId}/cobranca/`);
+        const res = await apiFetch(`/api/assinaturas/status/?condominio_id=${condoId}`);
         const data = await res.json();
-        setStatus((data?.status_assinatura as SubscriptionStatus) ?? 'trial');
+        setStatusInfo(data as StatusInfo);
       } catch {
-        setStatus('trial'); // fail-open
+        setStatusInfo(null); // fail-open
       }
       setLoading(false);
     };
 
-    fetchBilling();
+    fetchStatus();
   }, [condoId]);
 
   // Still loading condo or subscription — fail open (don't flash a redirect)
@@ -62,8 +72,11 @@ export function BillingGuard({ children }: BillingGuardProps) {
     return <>{children}</>;
   }
 
-  // Canceled — hard block, redirect to billing
-  if (status === 'canceled') {
+  const status = statusInfo?.status ?? null;
+  const trialExpirado = statusInfo?.trial_expirado ?? false;
+
+  // Trial expired or Canceled — hard block, redirect to billing
+  if (status === 'canceled' || trialExpirado) {
     return <Navigate to="/billing" replace />;
   }
 
@@ -88,6 +101,31 @@ export function BillingGuard({ children }: BillingGuardProps) {
     );
   }
 
-  // trial / active / null (fail-open) — full access
+  // Trial active — show countdown banner + full access
+  if (status === 'trial' && statusInfo?.dias_restantes !== null && statusInfo?.dias_restantes !== undefined) {
+    const dias = statusInfo.dias_restantes;
+    return (
+      <div className="space-y-4">
+        <Alert className="border-primary/30 bg-primary/5 [&>svg]:text-primary">
+          <Clock className="h-4 w-4" />
+          <AlertTitle className="text-primary">Período de teste</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4 flex-wrap">
+            <span className="text-primary/80 text-sm">
+              {dias <= 1
+                ? 'Seu período de teste expira hoje. Assine agora para continuar usando.'
+                : `Você tem ${dias} dias restantes no período de teste gratuito.`
+              }
+            </span>
+            <Button size="sm" variant="outline" className="border-primary/50 text-primary hover:bg-primary/10 shrink-0" asChild>
+              <Link to="/billing">Assinar agora</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+        {children}
+      </div>
+    );
+  }
+
+  // active / null (fail-open) — full access
   return <>{children}</>;
 }

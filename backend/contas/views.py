@@ -1,8 +1,10 @@
 """Views de autenticacao - login (JWT), cadastro, logout, refresh, etc."""
 
 import logging
+from datetime import timedelta
 
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -260,6 +262,8 @@ class OnboardingView(APIView):
             cidade=dados.get("condominio_cidade") or None,
             estado=dados.get("condominio_estado") or None,
             cep=dados.get("condominio_cep") or None,
+            status_assinatura="trial",
+            assinatura_expira_em=timezone.now() + timedelta(days=7),
         )
 
         # 3. Vincular usuario como SINDICO (ativo)

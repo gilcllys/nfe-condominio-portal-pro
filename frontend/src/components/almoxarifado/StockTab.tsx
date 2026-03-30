@@ -16,46 +16,46 @@ import { Plus, ArrowUpDown, Package, Pencil, FolderPlus, Filter } from 'lucide-r
 
 interface StockCategory {
   id: string;
-  name: string;
-  description: string | null;
+  nome: string;
+  descricao: string | null;
 }
 
 interface StockItem {
   id: string;
-  name: string;
-  unit: string;
-  min_qty: number;
-  current_qty: number;
-  category_id: string | null;
-  category_name: string | null;
-  description: string | null;
+  nome: string;
+  unidade_medida: string;
+  quantidade_minima: number;
+  saldo_atual: number;
+  categoria_id: string | null;
+  categoria_nome: string | null;
+  descricao: string | null;
 }
 
 interface NewItemForm {
-  name: string;
-  unit: string;
-  min_qty: string;
-  category_id: string;
-  description: string;
+  nome: string;
+  unidade_medida: string;
+  quantidade_minima: string;
+  categoria_id: string;
+  descricao: string;
 }
 
 interface EditItemForm {
-  name: string;
-  min_qty: string;
-  category_id: string;
-  description: string;
+  nome: string;
+  quantidade_minima: string;
+  categoria_id: string;
+  descricao: string;
 }
 
 interface MovementForm {
-  move_type: StockMoveType;
-  qty: string;
+  tipo_movimento: StockMoveType;
+  quantidade: string;
   destination: string;
   notes: string;
 }
 
 interface NewCategoryForm {
-  name: string;
-  description: string;
+  nome: string;
+  descricao: string;
 }
 
 const UNITS = ['un', 'kg', 'L', 'm', 'm²', 'caixa', 'saco', 'rolo'];
@@ -82,17 +82,17 @@ export default function StockTab() {
 
   // New Item dialog
   const [newItemOpen, setNewItemOpen] = useState(false);
-  const [newItemForm, setNewItemForm] = useState<NewItemForm>({ name: '', unit: '', min_qty: '', category_id: '', description: '' });
+  const [newItemForm, setNewItemForm] = useState<NewItemForm>({ nome: '', unidade_medida: '', quantidade_minima: '', categoria_id: '', descricao: '' });
 
   // Edit Item dialog
   const [editOpen, setEditOpen] = useState(false);
   const [editItem, setEditItem] = useState<StockItem | null>(null);
-  const [editForm, setEditForm] = useState<EditItemForm>({ name: '', min_qty: '', category_id: '', description: '' });
+  const [editForm, setEditForm] = useState<EditItemForm>({ nome: '', quantidade_minima: '', categoria_id: '', descricao: '' });
 
   // Movement dialog
   const [moveOpen, setMoveOpen] = useState(false);
   const [moveItem, setMoveItem] = useState<StockItem | null>(null);
-  const [moveForm, setMoveForm] = useState<MovementForm>({ move_type: STOCK_MOVE_TYPES.ENTRADA, qty: '', destination: 'almoxarifado', notes: '' });
+  const [moveForm, setMoveForm] = useState<MovementForm>({ tipo_movimento: STOCK_MOVE_TYPES.ENTRADA, quantidade: '', destination: 'almoxarifado', notes: '' });
 
   // New Category dialog
   const [catOpen, setCatOpen] = useState(false);

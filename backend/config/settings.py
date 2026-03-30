@@ -119,6 +119,7 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",") if o.strip()
 ]
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False").lower() in ("true", "1", "yes")
 CORS_ALLOW_HEADERS = [
     "authorization",
     "content-type",

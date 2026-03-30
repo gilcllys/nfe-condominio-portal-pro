@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -115,7 +118,12 @@ class CondominioViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        condominio = Condominio.objects.create(nome=nome, documento=documento)
+        condominio = Condominio.objects.create(
+            nome=nome,
+            documento=documento,
+            status_assinatura="trial",
+            assinatura_expira_em=timezone.now() + timedelta(days=7),
+        )
         MembroCondominio.objects.create(
             usuario=request.user,
             condominio=condominio,

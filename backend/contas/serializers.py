@@ -30,7 +30,7 @@ class TokenObtainPairCustomSerializer(TokenObtainPairSerializer):
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
-    nome_completo = serializers.CharField(source="nome_completo", read_only=True)
+    nome_completo = serializers.CharField(read_only=True)
 
     class Meta:
         model = Usuario
@@ -53,7 +53,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 class UsuarioResumoSerializer(serializers.ModelSerializer):
     """Serializer resumido para uso em listagens."""
 
-    nome_completo = serializers.CharField(source="nome_completo", read_only=True)
+    nome_completo = serializers.CharField(read_only=True)
 
     class Meta:
         model = Usuario
