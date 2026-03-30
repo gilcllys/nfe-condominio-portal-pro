@@ -159,10 +159,10 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
         action: 'update',
         entity: 'user',
         entityId: rejectTarget.id,
-        description: `Acesso de "${rejectTarget.full_name}" recusado. Motivo: ${rejectReason.trim()}`,
+        description: `Acesso de "${rejectTarget.nome_completo}" recusado. Motivo: ${rejectReason.trim()}`,
       });
 
-      toast({ title: `Cadastro de ${rejectTarget.full_name} recusado` });
+      toast({ title: `Cadastro de ${rejectTarget.nome_completo} recusado` });
     } catch {
       toast({ title: 'Erro ao recusar', description: 'Tente novamente.', variant: 'destructive' });
     }

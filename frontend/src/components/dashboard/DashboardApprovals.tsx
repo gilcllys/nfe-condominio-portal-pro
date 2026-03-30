@@ -70,7 +70,7 @@ export function DashboardApprovals() {
     fetchPending();
   }, [condoId, config]);
 
-  const deadlineHours = config?.approval_deadline_hours ?? null;
+  const deadlineHours = config?.prazo_aprovacao_horas ?? null;
 
   return (
     <div className="glass-card">

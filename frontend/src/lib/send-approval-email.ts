@@ -27,6 +27,8 @@ export async function sendApprovalEmails(
   if (!approverUserIds.length) return;
 
   try {
+    // TODO: /api/notifications/approval-email/ does NOT exist yet.
+    // A backend endpoint for sending approval notification emails needs to be created.
     const res = await apiFetch('/api/notifications/approval-email/', {
       method: 'POST',
       body: JSON.stringify({

@@ -123,7 +123,7 @@ export default function Condominios() {
         method: 'POST',
         body: JSON.stringify({
           nome: createForm.nome.trim(),
-          documento: createForm.documentoo.trim() || null,
+          documento: createForm.documento.trim() || null,
         }),
       });
       if (!res.ok) {

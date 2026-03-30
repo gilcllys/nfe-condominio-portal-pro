@@ -183,7 +183,7 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
     let deadlineHours = 48;
     if (configRes.ok) {
       const config = await configRes.json();
-      deadlineHours = config?.approval_deadline_hours ?? 48;
+      deadlineHours = config?.prazo_aprovacao_horas ?? 48;
     }
 
     const approversRes = await apiFetch(`/api/auth/usuario/?condominio_id=${condoId}&role=SUBSINDICO,CONSELHO&status=ativo`);

@@ -394,7 +394,7 @@ export default function Moradores() {
 
       {/* Role Change Dialog */}
       {roleTarget && condoId && (
-        <RoleChangeDialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen} residentName={roleTarget.name} currentRole={roleTarget.role} userCondoUserId={roleTarget.userId} condoId={condoId} onSaved={fetchResidents} />
+        <RoleChangeDialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen} residentName={roleTarget.name} currentRole={roleTarget.role} membroId={roleTarget.userId} condoId={condoId} onSaved={fetchResidents} />
       )}
 
       {/* Add Employee Dialog */}

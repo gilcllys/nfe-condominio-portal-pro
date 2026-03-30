@@ -145,7 +145,7 @@ export default function AprovacaoDetalhe() {
   }
 
   const requiredRoles = getRequiredRoles(doc.valor ?? 0, config);
-  const deadlineHours = config?.approval_deadline_hours ?? null;
+  const deadlineHours = config?.prazo_aprovacao_horas ?? null;
   const deadline = getDeadlineInfo(doc.criado_em, deadlineHours);
 
   const myApproverRole = role === 'ADMIN' ? 'SINDICO' : role;
