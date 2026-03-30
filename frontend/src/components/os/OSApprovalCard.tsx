@@ -14,14 +14,14 @@ import { ptBR } from 'date-fns/locale';
 
 interface Approval {
   id: string;
-  approver_id: string;
-  approver_role: string;
-  decision: string;
-  justification: string | null;
-  expires_at: string;
-  responded_at: string | null;
-  is_minerva: boolean;
-  minerva_justification: string | null;
+  aprovador_id: string;
+  papel_aprovador: string;
+  decisao: string;
+  motivo_revisao: string | null;
+  expira_em: string;
+  respondido_em: string | null;
+  minerva: boolean;
+  justificativa_minerva: string | null;
   approver_name?: string;
 }
 
@@ -74,13 +74,13 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
 
   const fetchApprovals = async () => {
     setLoading(true);
-    const res = await apiFetch(`/api/aprovacoes/?service_order_id=${orderId}&approval_type=${approvalType}&ordering=created_at`);
+    const res = await apiFetch(`/api/aprovacoes/?ordem_servico_id=${orderId}&tipo_aprovacao=${approvalType}&ordering=criado_em`);
     const json = await res.json();
     const data: any[] = json.results ?? json;
 
     if (data && data.length > 0) {
       // Fetch approver names
-      const userIds = [...new Set(data.map((a: any) => a.approver_id))];
+      const userIds = [...new Set(data.map((a: any) => a.aprovador_id))];
       const nameMap: Record<string, string> = {};
       for (const uid of userIds) {
         try {
@@ -91,7 +91,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
           }
         } catch {}
       }
-      setApprovals(data.map((a: any) => ({ ...a, approver_name: nameMap[a.approver_id] ?? 'Usuário' })));
+      setApprovals(data.map((a: any) => ({ ...a, approver_name: nameMap[a.aprovador_id] ?? 'Usuário' })));
     } else {
       setApprovals([]);
     }
@@ -103,11 +103,11 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
   // Check for expired approvals
   useEffect(() => {
     const checkExpired = async () => {
-      const expired = approvals.filter(a => a.decision === 'pendente' && new Date(a.expires_at) < new Date());
+      const expired = approvals.filter(a => a.decisao === 'pendente' && new Date(a.expira_em) < new Date());
       for (const a of expired) {
         await apiFetch(`/api/aprovacoes/${a.id}/`, {
           method: 'PATCH',
-          body: JSON.stringify({ decision: 'neutro', is_minerva: true, responded_at: new Date().toISOString() }),
+          body: JSON.stringify({ decisao: 'neutro', minerva: true, respondido_em: new Date().toISOString() }),
         });
       }
       if (expired.length > 0) fetchApprovals();
@@ -115,7 +115,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
     if (approvals.length > 0) checkExpired();
   }, [approvals.length]);
 
-  const myApproval = approvals.find(a => a.approver_id === internalUserId && a.decision === 'pendente');
+  const myApproval = approvals.find(a => a.aprovador_id === internalUserId && a.decisao === 'pendente');
 
   const handleDecision = async (decision: 'aprovado' | 'rejeitado') => {
     if (!myApproval) return;
@@ -128,16 +128,16 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
     const res = await apiFetch(`/api/aprovacoes/${myApproval.id}/`, {
       method: 'PATCH',
       body: JSON.stringify({
-        decision,
-        justification: justification.trim() || null,
-        responded_at: new Date().toISOString(),
+        decisao: decision,
+        motivo_revisao: justification.trim() || null,
+        respondido_em: new Date().toISOString(),
       }),
     });
 
     if (!res.ok) {
       toast({ title: 'Erro ao registrar voto', variant: 'destructive' });
     } else {
-      const roleName = roleLabel[myApproval.approver_role] ?? myApproval.approver_role;
+      const roleName = roleLabel[myApproval.papel_aprovador] ?? myApproval.papel_aprovador;
       const actionDesc = decision === 'aprovado'
         ? `${myApproval.approver_name} (${roleName}) aprovou`
         : `${myApproval.approver_name} (${roleName}) rejeitou — Motivo: ${justification.trim()}`;
@@ -157,9 +157,9 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
   };
 
   // Minerva logic
-  const allResponded = approvals.length > 0 && approvals.every(a => a.decision !== 'pendente');
-  const hasRejection = approvals.some(a => a.decision === 'rejeitado' || a.decision === 'neutro');
-  const allApproved = allResponded && approvals.every(a => a.decision === 'aprovado');
+  const allResponded = approvals.length > 0 && approvals.every(a => a.decisao !== 'pendente');
+  const hasRejection = approvals.some(a => a.decisao === 'rejeitado' || a.decisao === 'neutro');
+  const allApproved = allResponded && approvals.every(a => a.decisao === 'aprovado');
   const needsMinerva = allResponded && hasRejection && canCriticalActions;
 
   const handleMinerva = async (decision: 'aprovado' | 'cancelado') => {
@@ -176,8 +176,8 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
       const res = await apiFetch(`/api/aprovacoes/${a.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({
-          is_minerva: true,
-          minerva_justification: `Síndico exerceu voto de minerva — ${decision === 'aprovado' ? 'Aprovado' : 'Cancelado'} — Motivo: ${minervaJustification.trim()}`,
+          minerva: true,
+          justificativa_minerva: `Síndico exerceu voto de minerva — ${decision === 'aprovado' ? 'Aprovado' : 'Cancelado'} — Motivo: ${minervaJustification.trim()}`,
         }),
       });
       if (!res.ok) hasError = true;
@@ -207,7 +207,7 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
           {title}
           {approvals.length > 0 && (
             <Badge variant="secondary" className="text-xs ml-auto">
-              {approvals.filter(a => a.decision !== 'pendente').length}/{approvals.length} votos
+              {approvals.filter(a => a.decisao !== 'pendente').length}/{approvals.length} votos
             </Badge>
           )}
         </CardTitle>
@@ -220,23 +220,23 @@ export function OSApprovalCard({ orderId, condoId, approvalType, title, isSindic
             {/* Votes list */}
             <div className="space-y-2">
               {approvals.map(a => {
-                const hoursLeft = differenceInHours(new Date(a.expires_at), new Date());
+                const hoursLeft = differenceInHours(new Date(a.expira_em), new Date());
                 return (
                   <div key={a.id} className="flex items-center justify-between rounded-md border border-border p-3">
                     <div className="space-y-0.5">
                       <p className="text-sm font-medium text-foreground">
-                        {a.approver_name} <span className="text-muted-foreground">({roleLabel[a.approver_role] ?? a.approver_role})</span>
+                        {a.approver_name} <span className="text-muted-foreground">({roleLabel[a.papel_aprovador] ?? a.papel_aprovador})</span>
                       </p>
-                      {a.decision === 'pendente' && hoursLeft > 0 && (
+                      {a.decisao === 'pendente' && hoursLeft > 0 && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Expira em {hoursLeft}h
                         </p>
                       )}
-                      {a.justification && (
-                        <p className="text-xs text-muted-foreground">Motivo: {a.justification}</p>
+                      {a.motivo_revisao && (
+                        <p className="text-xs text-muted-foreground">Motivo: {a.motivo_revisao}</p>
                       )}
                     </div>
-                    {decisionBadge(a.decision)}
+                    {decisionBadge(a.decisao)}
                   </div>
                 );
               })}

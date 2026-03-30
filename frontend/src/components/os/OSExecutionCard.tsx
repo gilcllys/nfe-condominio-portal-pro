@@ -64,11 +64,11 @@ export function OSExecutionCard({
     const res = await apiFetch(`/api/ordens-servico/${orderId}/`, {
       method: 'PATCH',
       body: JSON.stringify({
-        executor_type: form.executor_type || null,
-        executor_name: form.executor_name.trim() || null,
-        execution_notes: form.execution_notes.trim() || null,
-        started_at: form.started_at ? new Date(form.started_at).toISOString() : null,
-        finished_at: form.finished_at ? new Date(form.finished_at).toISOString() : null,
+        tipo_executor: form.executor_type || null,
+        nome_executor: form.executor_name.trim() || null,
+        notas_execucao: form.execution_notes.trim() || null,
+        iniciado_em: form.started_at ? new Date(form.started_at).toISOString() : null,
+        finalizado_em: form.finished_at ? new Date(form.finished_at).toISOString() : null,
       }),
     });
 

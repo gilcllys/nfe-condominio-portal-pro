@@ -1,4 +1,5 @@
 from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -7,7 +8,15 @@ from fornecedores.models import Contrato, Fornecedor
 from fornecedores.serializers import ContratoSerializer, FornecedorSerializer
 
 
-class FornecedorViewSet(CondominioViewMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+class FornecedorViewSet(
+    CondominioViewMixin,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     serializer_class = FornecedorSerializer
     permission_classes = [IsAuthenticated]
 
@@ -33,6 +42,18 @@ class FornecedorViewSet(CondominioViewMixin, mixins.ListModelMixin, viewsets.Gen
             return Response(resultado)
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="analise-risco")
+    def analise_risco(self, request, pk=None):
+        """Placeholder for AI-powered risk analysis of a supplier."""
+        fornecedor = self.get_object()
+        # TODO: Integrate with AI service for real risk analysis
+        return Response({
+            "fornecedor_id": str(fornecedor.id),
+            "pontuacao_risco": fornecedor.pontuacao_risco or 0,
+            "analise": "Análise de risco não disponível no momento.",
+            "status": "pendente"
+        })
 
 
 class ContratoViewSet(CondominioViewMixin, viewsets.ModelViewSet):

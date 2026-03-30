@@ -3,10 +3,10 @@ import { Package } from 'lucide-react';
 
 interface SOMaterial {
   id: string;
-  name: string;
-  quantity: number | null;
-  unit: string | null;
-  cost: number | null;
+  item_estoque_id: string;
+  quantidade: number | null;
+  unidade_medida: string | null;
+  notas: string | null;
 }
 
 interface Props {
@@ -14,8 +14,6 @@ interface Props {
 }
 
 export function OSMaterialsCard({ materials }: Props) {
-  const totalCost = materials.reduce((sum, m) => sum + (m.cost ?? 0), 0);
-
   return (
     <Card>
       <CardHeader>
@@ -31,19 +29,13 @@ export function OSMaterialsCard({ materials }: Props) {
           <div className="space-y-2">
             {materials.map((m) => (
               <div key={m.id} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{m.name}</span>
+                <span className="text-foreground">{m.item_estoque_id}</span>
                 <span className="text-muted-foreground">
-                  {m.quantity ?? '—'} {m.unit ?? ''}
-                  {m.cost != null && ` · R$ ${m.cost.toFixed(2)}`}
+                  {m.quantidade ?? '—'} {m.unidade_medida ?? ''}
+                  {m.notas && ` · ${m.notas}`}
                 </span>
               </div>
             ))}
-            {totalCost > 0 && (
-              <div className="pt-2 border-t border-border flex justify-between text-sm font-medium">
-                <span className="text-foreground">Total</span>
-                <span className="text-foreground">R$ {totalCost.toFixed(2)}</span>
-              </div>
-            )}
           </div>
         )}
       </CardContent>

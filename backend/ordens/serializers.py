@@ -18,7 +18,9 @@ class OrdemServicoSerializer(SerializerBase):
         fields = [
             "id", "condominio_id", "titulo", "descricao",
             "localizacao", "status", "prioridade", "emergencial",
-            "tipo_executor", "fornecedor_id", "chamado_id",
+            "tipo_executor", "nome_executor", "notas_execucao",
+            "iniciado_em", "finalizado_em",
+            "fornecedor_id", "chamado_id",
             "pdf_final_url", "criado_por_id", "numero_os",
             "criado_em", "atualizado_em",
         ]

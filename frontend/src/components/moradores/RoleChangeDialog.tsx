@@ -22,7 +22,7 @@ interface RoleChangeDialogProps {
   onOpenChange: (open: boolean) => void;
   residentName: string;
   currentRole: string | null;
-  userCondoUserId: string | null;
+  membroId: string | null;
   condoId: string;
   onSaved: () => void;
 }
@@ -32,7 +32,7 @@ export default function RoleChangeDialog({
   onOpenChange,
   residentName,
   currentRole,
-  userCondoUserId,
+  membroId,
   condoId,
   onSaved,
 }: RoleChangeDialogProps) {
@@ -41,7 +41,7 @@ export default function RoleChangeDialog({
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!userCondoUserId) {
+    if (!membroId) {
       toast({ title: 'Este morador não possui conta de acesso vinculada', variant: 'destructive' });
       return;
     }
@@ -52,8 +52,8 @@ export default function RoleChangeDialog({
       const res = await apiFetch('/api/membros/alterar-papel/', {
         method: 'POST',
         body: JSON.stringify({
-          user_condo_id: userCondoUserId,
-          new_role: role,
+          membro_id: membroId,
+          novo_papel: role,
         }),
       });
 
@@ -69,7 +69,7 @@ export default function RoleChangeDialog({
           condoId,
           action: 'update',
           entity: 'user_condo',
-          entityId: userCondoUserId,
+          entityId: membroId,
           description: `Função de "${residentName}" alterada para ${ROLE_LABELS[role] ?? role}`,
         });
       } catch (e) {

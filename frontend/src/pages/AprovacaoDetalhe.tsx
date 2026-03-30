@@ -16,13 +16,13 @@ import { toast } from 'sonner';
 
 interface FiscalDoc {
   id: string;
-  number: string | null;
-  amount: number | null;
-  supplier: string | null;
-  issue_date: string | null;
-  document_type: string | null;
-  file_url: string | null;
-  created_at: string;
+  numero: string | null;
+  valor: number | null;
+  fornecedor: string | null;
+  data_emissao: string | null;
+  tipo_documento: string | null;
+  url_arquivo: string | null;
+  criado_em: string;
   status: string;
 }
 
@@ -144,18 +144,18 @@ export default function AprovacaoDetalhe() {
     );
   }
 
-  const requiredRoles = getRequiredRoles(doc.amount ?? 0, config);
+  const requiredRoles = getRequiredRoles(doc.valor ?? 0, config);
   const deadlineHours = config?.approval_deadline_hours ?? null;
-  const deadline = getDeadlineInfo(doc.created_at, deadlineHours);
+  const deadline = getDeadlineInfo(doc.criado_em, deadlineHours);
 
   const myApproverRole = role === 'ADMIN' ? 'SINDICO' : role;
   const myVotes = votes.filter(v => v.aprovador_id === internalUserId);
-  const myVote = myVotes.find(v => isFinalDecision(v.decision)) ?? myVotes[0];
+  const myVote = myVotes.find(v => isFinalDecision(v.decisao)) ?? myVotes[0];
   // Also check if the role's slot already has a final decision (any user of this role voted)
   const roleAlreadyDecided = myApproverRole
-    ? votes.some(v => v.approver_role === myApproverRole && isFinalDecision(v.decision))
+    ? votes.some(v => v.papel_aprovador === myApproverRole && isFinalDecision(v.decisao))
     : false;
-  const alreadyVoted = (myVote ? isFinalDecision(myVote.decision) : false) || roleAlreadyDecided;
+  const alreadyVoted = (myVote ? isFinalDecision(myVote.decisao) : false) || roleAlreadyDecided;
 
   // Check if the user's role is required for this document
   const roleIsRequired = role ? requiredRoles.includes(role) : false;
@@ -170,7 +170,7 @@ export default function AprovacaoDetalhe() {
   if (isSindico && requiredRoles.includes('SINDICO')) {
     const lowerTiers = requiredRoles.filter(r => r !== 'SINDICO');
     const allLowerDecided = lowerTiers.every(tier =>
-      votes.some(v => v.approver_role === tier && isFinalDecision(v.decision))
+      votes.some(v => v.papel_aprovador === tier && isFinalDecision(v.decisao))
     );
 
     if (!allLowerDecided && !deadline.expired) {
@@ -186,13 +186,13 @@ export default function AprovacaoDetalhe() {
     setSubmitting(true);
 
     const votePayload = {
-      fiscal_document_id: id,
-      condo_id: condoId,
-      approver_user_id: internalUserId,
-      approver_role: role === 'ADMIN' ? 'SINDICO' : role,
-      decision,
-      justification: justification.trim() || null,
-      voted_at: new Date().toISOString(),
+      documento_fiscal_id: id,
+      condominio_id: condoId,
+      aprovador_id: internalUserId,
+      papel_aprovador: role === 'ADMIN' ? 'SINDICO' : role,
+      decisao: decision,
+      justificativa: justification.trim() || null,
+      votado_em: new Date().toISOString(),
     };
 
     const existingPendingVote = votes.find(v => v.aprovador_id === internalUserId);
@@ -209,7 +209,7 @@ export default function AprovacaoDetalhe() {
       }
 
       // Check if all required votes are in to auto-update status
-      const allVotesRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${id}`);
+      const allVotesRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?documento_fiscal_id=${id}`);
       const allVotesData = allVotesRes.ok ? await allVotesRes.json() : [];
       const allVotes = Array.isArray(allVotesData) ? allVotesData : allVotesData.results ?? [];
 
@@ -220,7 +220,7 @@ export default function AprovacaoDetalhe() {
         });
 
         // Reverse any ENTRADA stock movements linked to this NF (safety net)
-        const movementsRes = await apiFetch(`/api/movimentacoes-estoque/?fiscal_document_id=${id}&move_type=ENTRADA`);
+        const movementsRes = await apiFetch(`/api/movimentacoes-estoque/?documento_fiscal_id=${id}&tipo_movimento=ENTRADA`);
         const movementsData = movementsRes.ok ? await movementsRes.json() : [];
         const existingMovements = Array.isArray(movementsData) ? movementsData : movementsData.results ?? [];
 
@@ -229,11 +229,11 @@ export default function AprovacaoDetalhe() {
             await apiFetch('/api/movimentacoes-estoque/', {
               method: 'POST',
               body: JSON.stringify({
-                condo_id: condoId,
+                condominio_id: condoId,
                 item_id: mv.item_id,
-                move_type: 'SAIDA',
-                qty: mv.qty,
-                fiscal_document_id: id,
+                tipo_movimento: 'SAIDA',
+                quantidade: mv.quantidade,
+                documento_fiscal_id: id,
               }),
             });
           }
@@ -242,7 +242,7 @@ export default function AprovacaoDetalhe() {
         toast.success('Documento rejeitado.');
       } else {
         const allApproved = requiredRoles.every(r =>
-          (allVotes as any[]).some(v => v.approver_role === r && v.decision === 'aprovado')
+          (allVotes as any[]).some(v => v.papel_aprovador === r && v.decisao === 'aprovado')
         );
         if (allApproved) {
           await apiFetch(`/api/documentos-fiscais/${id}/`, {
@@ -260,11 +260,11 @@ export default function AprovacaoDetalhe() {
               await apiFetch('/api/movimentacoes-estoque/', {
                 method: 'POST',
                 body: JSON.stringify({
-                  condo_id: condoId,
-                  item_id: item.stock_item_id,
-                  move_type: 'ENTRADA',
-                  qty: item.qty,
-                  fiscal_document_id: id,
+                  condominio_id: condoId,
+                  item_id: item.item_estoque_id,
+                  tipo_movimento: 'ENTRADA',
+                  quantidade: item.quantidade,
+                  documento_fiscal_id: id,
                 }),
               });
             }
@@ -297,7 +297,7 @@ export default function AprovacaoDetalhe() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            NF #{doc.number ?? '—'}
+            NF #{doc.numero ?? '—'}
           </h1>
           <Badge variant={doc.status === 'PENDENTE' ? 'default' : doc.status === 'PROCESSADO' ? 'secondary' : 'destructive'}>
             {{ PENDENTE: 'Pendente', PROCESSADO: 'Aprovado', CANCELADO: 'Cancelado' }[doc.status] ?? doc.status}
@@ -309,37 +309,37 @@ export default function AprovacaoDetalhe() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Valor:</span>
             <span className="font-semibold text-foreground">
-              {doc.amount != null ? `R$ ${doc.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+              {doc.valor != null ? `R$ ${doc.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <User className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Fornecedor:</span>
-            <span className="font-semibold text-foreground">{doc.supplier ?? '—'}</span>
+            <span className="font-semibold text-foreground">{doc.fornecedor ?? '—'}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Prazo:</span>
             <span className={`font-semibold ${deadline.expired ? 'text-destructive' : 'text-foreground'}`}>{deadline.label}</span>
           </div>
-          {doc.issue_date && (
+          {doc.data_emissao && (
             <div className="flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Emissão:</span>
-              <span className="font-semibold text-foreground">{format(new Date(doc.issue_date), 'dd/MM/yyyy', { locale: ptBR })}</span>
+              <span className="font-semibold text-foreground">{format(new Date(doc.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}</span>
             </div>
           )}
-          {doc.document_type && (
+          {doc.tipo_documento && (
             <div className="flex items-center gap-2 text-sm">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Tipo:</span>
-              <span className="font-semibold text-foreground">{doc.document_type}</span>
+              <span className="font-semibold text-foreground">{doc.tipo_documento}</span>
             </div>
           )}
         </div>
 
-        {doc.file_url && (
-          <a href={getPublicStorageUrl(doc.file_url)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+        {doc.url_arquivo && (
+          <a href={getPublicStorageUrl(doc.url_arquivo)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
             Ver documento anexado →
           </a>
         )}
@@ -350,30 +350,30 @@ export default function AprovacaoDetalhe() {
         <h2 className="text-base font-semibold text-foreground">Níveis de Aprovação</h2>
         <div className="space-y-3">
           {requiredRoles.map((r) => {
-            const roleVotes = votes.filter(v => v.approver_role === r);
-            const vote = roleVotes.find(v => isFinalDecision(v.decision)) ?? roleVotes[0];
+            const roleVotes = votes.filter(v => v.papel_aprovador === r);
+            const vote = roleVotes.find(v => isFinalDecision(v.decisao)) ?? roleVotes[0];
             return (
               <div key={r} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="text-xs">{r === 'SUBSINDICO' ? 'SUBSÍNDICO' : r}</Badge>
                   {vote ? (
                     <div className="flex items-center gap-2 text-sm">
-                      {vote.decision === 'aprovado' && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
-                      {vote.decision === 'rejeitado' && <XCircle className="h-4 w-4 text-destructive" />}
-                      {vote.decision === 'pendente' && <Clock className="h-3 w-3 text-muted-foreground" />}
+                      {vote.decisao === 'aprovado' && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                      {vote.decisao === 'rejeitado' && <XCircle className="h-4 w-4 text-destructive" />}
+                      {vote.decisao === 'pendente' && <Clock className="h-3 w-3 text-muted-foreground" />}
 
                       <span className={
-                        vote.decision === 'aprovado'
+                        vote.decisao === 'aprovado'
                           ? 'text-emerald-600'
-                          : vote.decision === 'rejeitado'
+                          : vote.decisao === 'rejeitado'
                             ? 'text-destructive'
                             : 'text-muted-foreground'
                       }>
-                        {vote.decision === 'aprovado' ? 'Aprovado' : vote.decision === 'rejeitado' ? 'Rejeitado' : 'Aguardando'}
+                        {vote.decisao === 'aprovado' ? 'Aprovado' : vote.decisao === 'rejeitado' ? 'Rejeitado' : 'Aguardando'}
                       </span>
 
-                      {vote.voted_at && isFinalDecision(vote.decision) && (() => {
-                        const d = new Date(vote.voted_at);
+                      {vote.votado_em && isFinalDecision(vote.decisao) && (() => {
+                        const d = new Date(vote.votado_em);
                         return !isNaN(d.getTime()) ? (
                           <span className="text-muted-foreground">
                             em {format(d, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -387,8 +387,8 @@ export default function AprovacaoDetalhe() {
                     </span>
                   )}
                 </div>
-                {vote?.justification && (
-                  <span className="text-xs text-muted-foreground italic max-w-[200px] truncate">"{vote.justification}"</span>
+                {vote?.justificativa && (
+                  <span className="text-xs text-muted-foreground italic max-w-[200px] truncate">"{vote.justificativa}"</span>
                 )}
               </div>
             );

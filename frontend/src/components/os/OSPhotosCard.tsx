@@ -11,11 +11,10 @@ import { logSOActivity } from '@/lib/so-activity-log';
 
 interface Photo {
   id: string;
-  photo_type: string;
-  file_url: string;
-  file_name?: string | null;
-  observation?: string | null;
-  created_at: string;
+  tipo_foto: string;
+  url_arquivo: string;
+  observacao?: string | null;
+  criado_em: string;
 }
 
 interface Props {
@@ -32,8 +31,8 @@ export function OSPhotosCard({ orderId, photos, photoUrls, canUploadFinalPhotos,
   const [uploadObservation, setUploadObservation] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const problemPhotos = photos.filter((p) => p.photo_type === 'PROBLEMA');
-  const finalPhotos = photos.filter((p) => p.photo_type === 'EXECUCAO_FINAL');
+  const problemPhotos = photos.filter((p) => p.tipo_foto === 'PROBLEMA');
+  const finalPhotos = photos.filter((p) => p.tipo_foto === 'EXECUCAO_FINAL');
 
   const handleUploadFinalPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -71,10 +70,10 @@ export function OSPhotosCard({ orderId, photos, photoUrls, canUploadFinalPhotos,
       const dbRes = await apiFetch(`/api/ordens-servico/${orderId}/photos/`, {
         method: 'POST',
         body: JSON.stringify({
-          service_order_id: orderId,
-          photo_type: 'EXECUCAO_FINAL',
-          file_url: path,
-          observation: uploadObservation.trim(),
+          ordem_servico_id: orderId,
+          tipo_foto: 'EXECUCAO_FINAL',
+          url_arquivo: path,
+          observacao: uploadObservation.trim(),
         }),
       });
 
@@ -107,12 +106,12 @@ export function OSPhotosCard({ orderId, photos, photoUrls, canUploadFinalPhotos,
               <a href={signedUrl} target="_blank" rel="noopener noreferrer">
                 <img
                   src={signedUrl}
-                  alt={doc.file_name ?? 'Foto'}
+                  alt={'Foto'}
                   className="h-24 w-full rounded-md object-cover border border-border hover:opacity-80 transition-opacity"
                 />
               </a>
-              {doc.observation && (
-                <p className="text-xs text-muted-foreground leading-snug">{doc.observation}</p>
+              {doc.observacao && (
+                <p className="text-xs text-muted-foreground leading-snug">{doc.observacao}</p>
               )}
             </div>
           );

@@ -1,3 +1,4 @@
+import secrets
 from datetime import timedelta
 
 from django.utils import timezone
@@ -192,6 +193,19 @@ class CondominioViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 setattr(cfg, campo, request.data[campo])
         cfg.save()
         return Response({"success": True})
+
+    @action(detail=True, methods=["post"], url_path="gerar-convite")
+    def gerar_convite(self, request, pk=None):
+        """Generate an invite code/link for this condominio."""
+        condominio = self.get_object()
+        # Generate a simple invite code
+        codigo = secrets.token_urlsafe(16)
+        # TODO: Store invite code in database
+        return Response({
+            "condominio_id": str(condominio.id),
+            "codigo_convite": codigo,
+            "link": f"/cadastro?convite={codigo}&condominio={condominio.id}",
+        })
 
     @action(
         detail=False,

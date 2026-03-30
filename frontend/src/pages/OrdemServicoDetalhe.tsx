@@ -25,49 +25,48 @@ import { OSStockMaterialDialog } from '@/components/os/OSStockMaterialDialog';
 
 interface ServiceOrderDetail {
   id: string;
-  condo_id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
+  condominio_id: string;
+  titulo: string;
+  descricao: string | null;
+  localizacao: string | null;
   status: string;
-  priority: string | null;
-  executor_type: string | null;
-  created_by: string;
-  created_at: string;
-  executor_name: string | null;
-  execution_notes: string | null;
-  is_emergency: boolean;
-  emergency_justification: string | null;
-  started_at: string | null;
-  finished_at: string | null;
-  provider_id: string | null;
-  ticket_id: string | null;
-  final_pdf_url: string | null;
+  prioridade: string | null;
+  tipo_executor: string | null;
+  criado_por_id: string;
+  criado_em: string;
+  nome_executor: string | null;
+  notas_execucao: string | null;
+  emergencial: boolean;
+  justificativa_emergencia: string | null;
+  iniciado_em: string | null;
+  finalizado_em: string | null;
+  fornecedor_id: string | null;
+  chamado_id: string | null;
+  pdf_final_url: string | null;
 }
 
 interface SOActivity {
   id: string;
-  activity_type: string;
-  description: string | null;
-  user_id: string;
-  created_at: string;
+  tipo_atividade: string;
+  descricao: string | null;
+  usuario_id: string;
+  criado_em: string;
 }
 
 interface SOMaterial {
   id: string;
-  name: string;
-  quantity: number | null;
-  unit: string | null;
-  cost: number | null;
+  item_estoque_id: string;
+  quantidade: number | null;
+  unidade_medida: string | null;
+  notas: string | null;
 }
 
 interface SODocument {
   id: string;
-  photo_type: string;
-  file_url: string;
-  file_name?: string | null;
-  observation?: string | null;
-  created_at: string;
+  tipo_foto: string;
+  url_arquivo: string;
+  observacao?: string | null;
+  criado_em: string;
 }
 
 const statusLabel: Record<string, string> = {
@@ -112,9 +111,9 @@ export default function OrdemServicoDetalhe() {
 
     const [orderRes, activitiesRes, materialsRes, docsRes] = await Promise.all([
       apiFetch(`/api/ordens-servico/${id}/?condominio_id=${condoId}`),
-      apiFetch(`/api/ordens-servico/${id}/activities/?ordering=-created_at`),
-      apiFetch(`/api/materiais-os/?service_order_id=${id}`),
-      apiFetch(`/api/ordens-servico/${id}/photos/?ordering=-created_at`),
+      apiFetch(`/api/ordens-servico/${id}/activities/?ordering=-criado_em`),
+      apiFetch(`/api/materiais-os/?ordem_servico_id=${id}`),
+      apiFetch(`/api/ordens-servico/${id}/photos/?ordering=-criado_em`),
     ]);
 
     if (!orderRes.ok) {
@@ -136,8 +135,8 @@ export default function OrdemServicoDetalhe() {
     setDocuments(Array.isArray(docsData) ? docsData : docsData.results ?? []);
 
     const [orcRes, finalRes] = await Promise.all([
-      apiFetch(`/api/aprovacoes/?service_order_id=${id}&approval_type=ORCAMENTO`),
-      apiFetch(`/api/aprovacoes/?service_order_id=${id}&approval_type=FINAL`),
+      apiFetch(`/api/aprovacoes/?ordem_servico_id=${id}&tipo_aprovacao=ORCAMENTO`),
+      apiFetch(`/api/aprovacoes/?ordem_servico_id=${id}&tipo_aprovacao=FINAL`),
     ]);
 
     const orcData = orcRes.ok ? await orcRes.json() : [];
@@ -174,8 +173,8 @@ export default function OrdemServicoDetalhe() {
     const generateUrls = () => {
       const urls: Record<string, string> = {};
       for (const doc of documents) {
-        if (!doc.file_url) continue;
-        urls[doc.id] = getPublicStorageUrl(doc.file_url);
+        if (!doc.url_arquivo) continue;
+        urls[doc.id] = getPublicStorageUrl(doc.url_arquivo);
       }
       setPhotoUrls(urls);
     };
@@ -187,7 +186,7 @@ export default function OrdemServicoDetalhe() {
     setPdfLoading(true);
     try {
       const photosWithUrls = documents
-        .map((d) => ({ photo_type: d.photo_type, signedUrl: photoUrls[d.id], observation: d.observation }))
+        .map((d) => ({ tipo_foto: d.tipo_foto, signedUrl: photoUrls[d.id], observacao: d.observacao }))
         .filter((p) => !!p.signedUrl);
 
       const blob = await generateOSPdfBlob(order, activities, materials, condoName, photosWithUrls, finalApprovals);
@@ -229,7 +228,7 @@ export default function OrdemServicoDetalhe() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{order.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{order.titulo}</h1>
           <p className="text-sm text-muted-foreground">OS #{order.id.slice(0, 8)}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -246,39 +245,39 @@ export default function OrdemServicoDetalhe() {
       {/* Main Content Grid */}
       <div className="grid gap-4 lg:grid-cols-2">
         <OSInfoCard
-          description={order.description}
-          location={order.location}
-          priority={order.priority}
-          createdAt={order.created_at}
-          createdBy={order.created_by}
-          isEmergency={order.is_emergency}
-          emergencyJustification={order.emergency_justification}
-          startedAt={order.started_at}
-          finishedAt={order.finished_at}
-          providerId={order.provider_id}
-          ticketId={order.ticket_id}
+          description={order.descricao}
+          location={order.localizacao}
+          priority={order.prioridade}
+          createdAt={order.criado_em}
+          createdBy={order.criado_por_id}
+          isEmergency={order.emergencial}
+          emergencyJustification={order.justificativa_emergencia}
+          startedAt={order.iniciado_em}
+          finishedAt={order.finalizado_em}
+          providerId={order.fornecedor_id}
+          ticketId={order.chamado_id}
         />
         <OSExecutionCard
           orderId={order.id}
           status={order.status}
-          executorType={order.executor_type}
-          executorName={order.executor_name}
-          executionNotes={order.execution_notes}
-          startedAt={order.started_at}
-          finishedAt={order.finished_at}
+          executorType={order.tipo_executor}
+          executorName={order.nome_executor}
+          executionNotes={order.notas_execucao}
+          startedAt={order.iniciado_em}
+          finishedAt={order.finalizado_em}
           canEdit={canEditExecution}
           onSaved={fetchAll}
         />
       </div>
 
       {/* Budgets — only for PRESTADOR_EXTERNO */}
-      {condoId && order.executor_type !== 'EQUIPE_INTERNA' && (
+      {condoId && order.tipo_executor !== 'EQUIPE_INTERNA' && (
         <OSBudgetsCard
           orderId={order.id}
-          orderTitle={order.title}
+          orderTitle={order.titulo}
           condoId={condoId}
-          priority={order.priority ?? 'BAIXA'}
-          executorType={order.executor_type}
+          priority={order.prioridade ?? 'BAIXA'}
+          executorType={order.tipo_executor}
           isSindico={isSindico}
           isAdmin={isAdmin}
           canCriticalActions={isSindico || isAdmin}

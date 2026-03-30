@@ -28,7 +28,7 @@ export default function JoinCondoSection() {
 
     try {
       // Validate invite code
-      const condoRes = await apiFetch(`/api/condominios/validar-convite/?code=${encodeURIComponent(inviteCode)}`);
+      const condoRes = await apiFetch(`/api/condominios/validar-convite/?codigo=${encodeURIComponent(inviteCode)}`);
       const condo = await condoRes.json();
 
       if (!condo || !condo.id) {
@@ -48,7 +48,7 @@ export default function JoinCondoSection() {
       }
 
       // Check if already linked
-      const existingRes = await apiFetch(`/api/membros/?user_id=${userRow.id}&condominio_id=${condo.id}`);
+      const existingRes = await apiFetch(`/api/membros/?usuario_id=${userRow.id}&condominio_id=${condo.id}`);
       const existingData = await existingRes.json();
       const existingList = Array.isArray(existingData) ? existingData : existingData?.results ?? [];
 
@@ -62,18 +62,18 @@ export default function JoinCondoSection() {
       const createRes = await apiFetch('/api/membros/', {
         method: 'POST',
         body: JSON.stringify({
-          user_id: userRow.id,
-          condo_id: condo.id,
-          role: 'MORADOR',
+          usuario_id: userRow.id,
+          condominio_id: condo.id,
+          papel: 'MORADOR',
           status: 'pendente',
-          is_default: false,
+          padrao: false,
         }),
       });
 
       if (!createRes.ok) {
         toast({ title: 'Erro ao solicitar acesso', description: 'Tente novamente.', variant: 'destructive' });
       } else {
-        toast({ title: 'Solicitação enviada!', description: `Aguarde a aprovação do síndico de ${condo.name}.` });
+        toast({ title: 'Solicitação enviada!', description: `Aguarde a aprovação do síndico de ${condo.nome}.` });
         setCode('');
       }
     } catch {

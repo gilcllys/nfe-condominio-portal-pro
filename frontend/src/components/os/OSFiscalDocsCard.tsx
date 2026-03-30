@@ -16,12 +16,12 @@ import { getRequiredRoles } from '@/hooks/useFinancialConfig';
 
 interface FiscalDocument {
   id: string;
-  number: string | null;
-  amount: number | null;
-  issue_date: string | null;
-  file_url: string | null;
-  created_at: string;
-  approval_status?: string;
+  numero: string | null;
+  valor: number | null;
+  data_emissao: string | null;
+  url_arquivo: string | null;
+  criado_em: string;
+  status_aprovacao?: string;
 }
 
 interface OSFiscalDocsCardProps {
@@ -59,7 +59,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
 
   const fetchDocs = async () => {
     setLoading(true);
-    const res = await apiFetch(`/api/documentos-fiscais/?service_order_id=${orderId}&ordering=-created_at`);
+    const res = await apiFetch(`/api/documentos-fiscais/?ordem_servico_id=${orderId}&ordering=-criado_em`);
     const json = await res.json();
     setDocs(json.results ?? json ?? []);
     setLoading(false);
@@ -136,20 +136,19 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
     }
 
     const insertPayload = {
-      service_order_id: orderId,
-      condo_id: condoId,
-      document_number: numberVal,
-      number: numberVal,
-      gross_amount: amountVal,
-      amount: amountVal,
-      issue_date: form.issue_date || null,
-      issuer_name: form.fornecedor.trim() || null,
-      supplier: form.fornecedor.trim() || null,
-      file_url: fileUrl,
-      source_type: 'UPLOAD',
-      document_type: 'NFE',
+      ordem_servico_id: orderId,
+      condominio_id: condoId,
+      numero: numberVal,
+      valor_bruto: amountVal,
+      valor: amountVal,
+      data_emissao: form.issue_date || null,
+      nome_emissor: form.fornecedor.trim() || null,
+      fornecedor: form.fornecedor.trim() || null,
+      url_arquivo: fileUrl,
+      tipo_fonte: 'UPLOAD',
+      tipo_documento: 'NFE',
       status: 'PENDENTE',
-      approval_status: 'pendente',
+      status_aprovacao: 'pendente',
     };
 
     const res = await apiFetch('/api/documentos-fiscais/', {
@@ -172,7 +171,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
   };
 
   const handleSendForApproval = async (doc: FiscalDocument) => {
-    if (!doc.amount) return;
+    if (!doc.valor) return;
     setSubmitting(doc.id);
 
     const configRes = await apiFetch(`/api/condominios/${condoId}/config-financeira/`);
@@ -181,10 +180,10 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
       config = await configRes.json();
     }
 
-    const amount = doc.amount;
+    const amount = doc.valor;
     const requiredRoles = getRequiredRoles(amount, config as any);
 
-    const existingRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?fiscal_document_id=${doc.id}&limit=1`);
+    const existingRes = await apiFetch(`/api/aprovacoes-doc-fiscal/?documento_fiscal_id=${doc.id}&limit=1`);
     const existingJson = await existingRes.json();
     const existingApprovals = existingJson.results ?? existingJson ?? [];
 
@@ -205,10 +204,10 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
     }
 
     const approvalRecords = approvers.map((a: any) => ({
-      fiscal_document_id: doc.id,
-      condo_id: condoId,
-      approver_user_id: a.user_id,
-      approver_role: a.role,
+      documento_fiscal_id: doc.id,
+      condominio_id: condoId,
+      aprovador_id: a.user_id,
+      papel_aprovador: a.role,
     }));
 
     const insertRes = await apiFetch('/api/aprovacoes-doc-fiscal/', {
@@ -223,7 +222,7 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
       await logSOActivity({
         serviceOrderId: orderId,
         action: 'NF_ENVIADA_APROVACAO',
-        description: `NF Nº ${doc.number} (${rangeLabel}) enviada para aprovação`,
+        description: `NF Nº ${doc.numero} (${rangeLabel}) enviada para aprovação`,
       });
       toast({ title: 'NF enviada para aprovação' });
       onApprovalSent?.();
@@ -257,21 +256,21 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
                 <div className="space-y-1 flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">NF {doc.number ?? '—'}</span>
-                    {doc.amount != null && (
+                    <span className="text-sm font-medium text-foreground">NF {doc.numero ?? '—'}</span>
+                    {doc.valor != null && (
                       <Badge variant="secondary" className="text-xs">
-                        R$ {doc.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {doc.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </Badge>
                     )}
                   </div>
-                  {doc.issue_date && (
+                  {doc.data_emissao && (
                     <p className="text-xs text-muted-foreground">
-                      Emissão: {format(new Date(doc.issue_date), 'dd/MM/yyyy', { locale: ptBR })}
+                      Emissão: {format(new Date(doc.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                  {canCriticalActions && doc.amount && (
+                  {canCriticalActions && doc.valor && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -282,8 +281,8 @@ export function OSFiscalDocsCard({ orderId, condoId, canAttach, canCriticalActio
                       {submitting === doc.id ? '...' : 'Aprovar'}
                     </Button>
                   )}
-                  {doc.file_url && (
-                    <Button size="sm" variant="ghost" onClick={() => handleDownload(doc.file_url!)}>
+                  {doc.url_arquivo && (
+                    <Button size="sm" variant="ghost" onClick={() => handleDownload(doc.url_arquivo!)}>
                       <Download className="h-4 w-4" />
                     </Button>
                   )}

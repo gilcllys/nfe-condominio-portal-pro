@@ -61,13 +61,13 @@ interface NewCategoryForm {
 const UNITS = ['un', 'kg', 'L', 'm', 'm²', 'caixa', 'saco', 'rolo'];
 
 const DEFAULT_CATEGORIES = [
-  { name: 'Máquinas e Equipamentos', description: 'Cortadores de grama, lavadoras, etc.' },
-  { name: 'Ferramentas', description: 'Ferramentas manuais e elétricas' },
-  { name: 'Lubrificantes e Químicos', description: 'Óleos, graxas, produtos químicos' },
-  { name: 'Material de Limpeza', description: 'Produtos e utensílios de limpeza' },
-  { name: 'Material Elétrico', description: 'Fios, lâmpadas, disjuntores' },
-  { name: 'Material Hidráulico', description: 'Tubos, conexões, registros' },
-  { name: 'Outros', description: 'Itens não categorizados' },
+  { nome: 'Máquinas e Equipamentos', descricao: 'Cortadores de grama, lavadoras, etc.' },
+  { nome: 'Ferramentas', descricao: 'Ferramentas manuais e elétricas' },
+  { nome: 'Lubrificantes e Químicos', descricao: 'Óleos, graxas, produtos químicos' },
+  { nome: 'Material de Limpeza', descricao: 'Produtos e utensílios de limpeza' },
+  { nome: 'Material Elétrico', descricao: 'Fios, lâmpadas, disjuntores' },
+  { nome: 'Material Hidráulico', descricao: 'Tubos, conexões, registros' },
+  { nome: 'Outros', descricao: 'Itens não categorizados' },
 ];
 
 export default function StockTab() {
@@ -96,7 +96,7 @@ export default function StockTab() {
 
   // New Category dialog
   const [catOpen, setCatOpen] = useState(false);
-  const [catForm, setCatForm] = useState<NewCategoryForm>({ name: '', description: '' });
+  const [catForm, setCatForm] = useState<NewCategoryForm>({ nome: '', descricao: '' });
 
   const [saving, setSaving] = useState(false);
 
@@ -111,7 +111,7 @@ export default function StockTab() {
       if (cats.length === 0) {
         const seedRes = await apiFetch(`/api/categorias-estoque/semear-padroes/?condominio_id=${condoId}`, {
           method: 'POST',
-          body: JSON.stringify({ condo_id: condoId }),
+          body: JSON.stringify({ condominio_id: condoId }),
         });
         const seeded = await seedRes.json();
         const seededList = Array.isArray(seeded) ? seeded : seeded?.results ?? [];
@@ -140,16 +140,16 @@ export default function StockTab() {
 
       const balanceMap: Record<string, number> = {};
       balanceList.forEach((b: any) => {
-        balanceMap[b.id || b.item_id] = Number(b.balance_qty || b.current_qty) || 0;
+        balanceMap[b.item_id] = Number(b.saldo) || 0;
       });
 
       const catMap: Record<string, string> = {};
-      categories.forEach(c => { catMap[c.id] = c.name; });
+      categories.forEach(c => { catMap[c.id] = c.nome; });
 
       const merged: StockItem[] = stockItems.map((item: any) => ({
         ...item,
-        current_qty: balanceMap[item.id] ?? Number(item.current_qty) ?? 0,
-        category_name: item.category_id ? (catMap[item.category_id] || 'Sem categoria') : 'Sem categoria',
+        saldo_atual: balanceMap[item.id] ?? 0,
+        categoria_nome: item.categoria_id ? (catMap[item.categoria_id] || 'Sem categoria') : 'Sem categoria',
       }));
 
       setItems(merged);
@@ -172,7 +172,7 @@ export default function StockTab() {
 
   const handleCreateCategory = async () => {
     if (!condoId) return;
-    if (!catForm.name.trim()) {
+    if (!catForm.nome.trim()) {
       toast({ title: 'Nome da categoria é obrigatório', variant: 'destructive' });
       return;
     }
@@ -182,9 +182,9 @@ export default function StockTab() {
       const res = await apiFetch('/api/categorias-estoque/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          name: catForm.name.trim(),
-          description: catForm.description.trim() || null,
+          condominio_id: condoId,
+          nome: catForm.nome.trim(),
+          descricao: catForm.descricao.trim() || null,
         }),
       });
 
@@ -194,7 +194,7 @@ export default function StockTab() {
       } else {
         toast({ title: 'Categoria criada!' });
         setCatOpen(false);
-        setCatForm({ name: '', description: '' });
+        setCatForm({ nome: '', descricao: '' });
         fetchCategories();
       }
     } catch {
@@ -205,7 +205,7 @@ export default function StockTab() {
 
   const handleCreateItem = async () => {
     if (!condoId) return;
-    if (!newItemForm.name.trim() || !newItemForm.unit || !newItemForm.min_qty) {
+    if (!newItemForm.nome.trim() || !newItemForm.unidade_medida || !newItemForm.quantidade_minima) {
       toast({ title: 'Preencha todos os campos obrigatórios', variant: 'destructive' });
       return;
     }
@@ -216,12 +216,12 @@ export default function StockTab() {
       const res = await apiFetch('/api/itens-estoque/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          name: newItemForm.name.trim(),
-          unit: newItemForm.unit,
-          min_qty: Number(newItemForm.min_qty),
-          category_id: newItemForm.category_id || null,
-          description: newItemForm.description.trim() || null,
+          condominio_id: condoId,
+          nome: newItemForm.nome.trim(),
+          unidade_medida: newItemForm.unidade_medida,
+          quantidade_minima: Number(newItemForm.quantidade_minima),
+          categoria_id: newItemForm.categoria_id || null,
+          descricao: newItemForm.descricao.trim() || null,
         }),
       });
 
@@ -231,7 +231,7 @@ export default function StockTab() {
       } else {
         toast({ title: 'Item criado com sucesso' });
         setNewItemOpen(false);
-        setNewItemForm({ name: '', unit: '', min_qty: '', category_id: '', description: '' });
+        setNewItemForm({ nome: '', unidade_medida: '', quantidade_minima: '', categoria_id: '', descricao: '' });
         fetchItems();
       }
     } catch {
@@ -243,17 +243,17 @@ export default function StockTab() {
   const openEdit = (item: StockItem) => {
     setEditItem(item);
     setEditForm({
-      name: item.name,
-      min_qty: String(item.min_qty),
-      category_id: item.category_id || '',
-      description: item.description || '',
+      nome: item.nome,
+      quantidade_minima: String(item.quantidade_minima),
+      categoria_id: item.categoria_id || '',
+      descricao: item.descricao || '',
     });
     setEditOpen(true);
   };
 
   const handleEditItem = async () => {
     if (!editItem) return;
-    if (!editForm.name.trim()) {
+    if (!editForm.nome.trim()) {
       toast({ title: 'Nome é obrigatório', variant: 'destructive' });
       return;
     }
@@ -263,10 +263,10 @@ export default function StockTab() {
       const res = await apiFetch(`/api/itens-estoque/${editItem.id}/`, {
         method: 'PATCH',
         body: JSON.stringify({
-          name: editForm.name.trim(),
-          min_qty: Number(editForm.min_qty) || 0,
-          category_id: editForm.category_id || null,
-          description: editForm.description.trim() || null,
+          nome: editForm.nome.trim(),
+          quantidade_minima: Number(editForm.quantidade_minima) || 0,
+          categoria_id: editForm.categoria_id || null,
+          descricao: editForm.descricao.trim() || null,
         }),
       });
 
@@ -286,19 +286,19 @@ export default function StockTab() {
 
   const openMovement = (item: StockItem) => {
     setMoveItem(item);
-    setMoveForm({ move_type: STOCK_MOVE_TYPES.ENTRADA, qty: '', destination: 'almoxarifado', notes: '' });
+    setMoveForm({ tipo_movimento: STOCK_MOVE_TYPES.ENTRADA, quantidade: '', destination: 'almoxarifado', notes: '' });
     setMoveOpen(true);
   };
 
   const handleMovement = async () => {
     if (!moveItem || !condoId) return;
-    const qty = Number(moveForm.qty);
+    const qty = Number(moveForm.quantidade);
     if (!qty || qty <= 0) {
       toast({ title: 'Quantidade inválida', variant: 'destructive' });
       return;
     }
 
-    if (moveForm.move_type === 'AJUSTE' && !moveForm.notes.trim()) {
+    if (moveForm.tipo_movimento === 'AJUSTE' && !moveForm.notes.trim()) {
       toast({ title: 'Justificativa é obrigatória para ajustes', variant: 'destructive' });
       return;
     }
@@ -309,10 +309,10 @@ export default function StockTab() {
       const res = await apiFetch('/api/movimentacoes-estoque/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
+          condominio_id: condoId,
           item_id: moveItem.id,
-          move_type: normalizeStockMoveType(moveForm.move_type),
-          qty,
+          tipo_movimento: normalizeStockMoveType(moveForm.tipo_movimento),
+          quantidade: qty,
         }),
       });
 
@@ -333,8 +333,8 @@ export default function StockTab() {
   const filteredItems = filterCategory === 'all'
     ? items
     : filterCategory === 'none'
-      ? items.filter(i => !i.category_id)
-      : items.filter(i => i.category_id === filterCategory);
+      ? items.filter(i => !i.categoria_id)
+      : items.filter(i => i.categoria_id === filterCategory);
 
   return (
     <>
@@ -371,7 +371,7 @@ export default function StockTab() {
                 <SelectItem value="all">Todas as categorias</SelectItem>
                 <SelectItem value="none">Sem categoria</SelectItem>
                 {categories.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -399,17 +399,17 @@ export default function StockTab() {
                 <TableBody>
                   {filteredItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="font-medium">{item.nome}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs font-normal">
-                          {item.category_name}
+                          {item.categoria_nome}
                         </Badge>
                       </TableCell>
-                      <TableCell>{item.unit}</TableCell>
-                      <TableCell className="text-right">{item.current_qty}</TableCell>
-                      <TableCell className="text-right">{item.min_qty}</TableCell>
+                      <TableCell>{item.unidade_medida}</TableCell>
+                      <TableCell className="text-right">{item.saldo_atual}</TableCell>
+                      <TableCell className="text-right">{item.quantidade_minima}</TableCell>
                       <TableCell>
-                        {item.current_qty > item.min_qty ? (
+                        {item.saldo_atual > item.quantidade_minima ? (
                           <Badge className="bg-green-600 text-white hover:bg-green-700">OK</Badge>
                         ) : (
                           <Badge variant="destructive">Baixo</Badge>
@@ -447,11 +447,11 @@ export default function StockTab() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Nome *</Label>
-              <Input value={catForm.name} onChange={(e) => setCatForm(p => ({ ...p, name: e.target.value }))} />
+              <Input value={catForm.nome} onChange={(e) => setCatForm(p => ({ ...p, nome: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Input value={catForm.description} onChange={(e) => setCatForm(p => ({ ...p, description: e.target.value }))} />
+              <Input value={catForm.descricao} onChange={(e) => setCatForm(p => ({ ...p, descricao: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
@@ -471,21 +471,21 @@ export default function StockTab() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Nome *</Label>
-              <Input value={newItemForm.name} onChange={(e) => setNewItemForm(p => ({ ...p, name: e.target.value }))} />
+              <Input value={newItemForm.nome} onChange={(e) => setNewItemForm(p => ({ ...p, nome: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={newItemForm.category_id} onValueChange={(v) => setNewItemForm(p => ({ ...p, category_id: v }))}>
+              <Select value={newItemForm.categoria_id} onValueChange={(v) => setNewItemForm(p => ({ ...p, categoria_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione uma categoria" /></SelectTrigger>
                 <SelectContent>
-                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Unidade *</Label>
-                <Select value={newItemForm.unit} onValueChange={(v) => setNewItemForm(p => ({ ...p, unit: v }))}>
+                <Select value={newItemForm.unidade_medida} onValueChange={(v) => setNewItemForm(p => ({ ...p, unidade_medida: v }))}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
@@ -494,12 +494,12 @@ export default function StockTab() {
               </div>
               <div className="space-y-2">
                 <Label>Qtd. mínima *</Label>
-                <Input type="number" min="0" value={newItemForm.min_qty} onChange={(e) => setNewItemForm(p => ({ ...p, min_qty: e.target.value }))} />
+                <Input type="number" min="0" value={newItemForm.quantidade_minima} onChange={(e) => setNewItemForm(p => ({ ...p, quantidade_minima: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Textarea value={newItemForm.description} onChange={(e) => setNewItemForm(p => ({ ...p, description: e.target.value }))} placeholder="Detalhes adicionais do item..." />
+              <Textarea value={newItemForm.descricao} onChange={(e) => setNewItemForm(p => ({ ...p, descricao: e.target.value }))} placeholder="Detalhes adicionais do item..." />
             </div>
           </div>
           <DialogFooter>
@@ -513,30 +513,30 @@ export default function StockTab() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Item: {editItem?.name}</DialogTitle>
+            <DialogTitle>Editar Item: {editItem?.nome}</DialogTitle>
             <DialogDescription>Edite nome, categoria e quantidade mínima. O saldo só pode ser alterado via movimentação.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Nome *</Label>
-              <Input value={editForm.name} onChange={(e) => setEditForm(p => ({ ...p, name: e.target.value }))} />
+              <Input value={editForm.nome} onChange={(e) => setEditForm(p => ({ ...p, nome: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Categoria</Label>
-              <Select value={editForm.category_id} onValueChange={(v) => setEditForm(p => ({ ...p, category_id: v }))}>
+              <Select value={editForm.categoria_id} onValueChange={(v) => setEditForm(p => ({ ...p, categoria_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
                 <SelectContent>
-                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Qtd. mínima</Label>
-              <Input type="number" min="0" value={editForm.min_qty} onChange={(e) => setEditForm(p => ({ ...p, min_qty: e.target.value }))} />
+              <Input type="number" min="0" value={editForm.quantidade_minima} onChange={(e) => setEditForm(p => ({ ...p, quantidade_minima: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Textarea value={editForm.description} onChange={(e) => setEditForm(p => ({ ...p, description: e.target.value }))} />
+              <Textarea value={editForm.descricao} onChange={(e) => setEditForm(p => ({ ...p, descricao: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
@@ -550,13 +550,13 @@ export default function StockTab() {
       <Dialog open={moveOpen} onOpenChange={setMoveOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Movimentar: {moveItem?.name}</DialogTitle>
+            <DialogTitle>Movimentar: {moveItem?.nome}</DialogTitle>
             <DialogDescription>Registre uma entrada, saída ou ajuste de estoque.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Tipo *</Label>
-              <Select value={moveForm.move_type} onValueChange={(v) => setMoveForm(p => ({ ...p, move_type: normalizeStockMoveType(v) }))}>
+              <Select value={moveForm.tipo_movimento} onValueChange={(v) => setMoveForm(p => ({ ...p, tipo_movimento: normalizeStockMoveType(v) }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ENTRADA">Entrada</SelectItem>
@@ -567,9 +567,9 @@ export default function StockTab() {
             </div>
             <div className="space-y-2">
               <Label>Quantidade *</Label>
-              <Input type="number" min="1" value={moveForm.qty} onChange={(e) => setMoveForm(p => ({ ...p, qty: e.target.value }))} />
+              <Input type="number" min="1" value={moveForm.quantidade} onChange={(e) => setMoveForm(p => ({ ...p, quantidade: e.target.value }))} />
             </div>
-            {moveForm.move_type === 'SAIDA' && (
+            {moveForm.tipo_movimento === 'SAIDA' && (
               <div className="space-y-2">
                 <Label>Destino</Label>
                 <Select value={moveForm.destination} onValueChange={(v) => setMoveForm(p => ({ ...p, destination: v }))}>
@@ -583,11 +583,11 @@ export default function StockTab() {
               </div>
             )}
             <div className="space-y-2">
-              <Label>{moveForm.move_type === 'AJUSTE' ? 'Justificativa *' : 'Observação'}</Label>
+              <Label>{moveForm.tipo_movimento === 'AJUSTE' ? 'Justificativa *' : 'Observação'}</Label>
               <Textarea
                 value={moveForm.notes}
                 onChange={(e) => setMoveForm(p => ({ ...p, notes: e.target.value }))}
-                placeholder={moveForm.move_type === 'AJUSTE' ? 'Justificativa obrigatória para ajuste...' : 'Observação opcional...'}
+                placeholder={moveForm.tipo_movimento === 'AJUSTE' ? 'Justificativa obrigatória para ajuste...' : 'Observação opcional...'}
               />
             </div>
           </div>

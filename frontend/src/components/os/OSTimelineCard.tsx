@@ -5,10 +5,10 @@ import { ptBR } from 'date-fns/locale';
 
 interface SOActivity {
   id: string;
-  activity_type: string;
-  description: string | null;
-  user_id: string;
-  created_at: string;
+  tipo_atividade: string;
+  descricao: string | null;
+  usuario_id: string;
+  criado_em: string;
 }
 
 const activityColor: Record<string, string> = {
@@ -50,12 +50,12 @@ export function OSTimelineCard({ activities }: Props) {
             {activities.map((a) => (
               <div key={a.id} className="relative flex gap-3 items-start pb-4 last:pb-0">
                 <div
-                  className={`mt-1.5 h-3.5 w-3.5 rounded-full shrink-0 z-10 border-2 border-background ${activityColor[a.activity_type] ?? 'bg-muted-foreground'}`}
+                  className={`mt-1.5 h-3.5 w-3.5 rounded-full shrink-0 z-10 border-2 border-background ${activityColor[a.tipo_atividade] ?? 'bg-muted-foreground'}`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground">{a.description ?? a.activity_type}</p>
+                  <p className="text-sm text-foreground">{a.descricao ?? a.tipo_atividade}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: ptBR })}
+                    {formatDistanceToNow(new Date(a.criado_em), { addSuffix: true, locale: ptBR })}
                   </p>
                 </div>
               </div>

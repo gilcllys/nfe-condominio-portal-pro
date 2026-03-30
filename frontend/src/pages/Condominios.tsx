@@ -37,18 +37,18 @@ import {
 import InviteLinkDialog from '@/components/moradores/InviteLinkDialog';
 
 interface CondoItem {
-  condo_id: string;
-  condo_name: string;
-  role: string;
-  is_default: boolean;
+  condominio_id: string;
+  condominio_nome: string;
+  papel: string;
+  padrao: boolean;
 }
 
 interface CondoForm {
-  name: string;
-  document: string;
+  nome: string;
+  documento: string;
 }
 
-const emptyForm: CondoForm = { name: '', document: '' };
+const emptyForm: CondoForm = { nome: '', documento: '' };
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Admin',
@@ -113,7 +113,7 @@ export default function Condominios() {
   // ── Create ──────────────────────────────────────────────────────────────────
 
   const handleCreate = async () => {
-    if (!createForm.name.trim()) {
+    if (!createForm.nome.trim()) {
       toast({ title: 'Nome é obrigatório', variant: 'destructive' });
       return;
     }
@@ -122,8 +122,8 @@ export default function Condominios() {
       const res = await apiFetch('/api/condominios/criar/', {
         method: 'POST',
         body: JSON.stringify({
-          p_name: createForm.name.trim(),
-          p_document: createForm.document.trim() || null,
+          nome: createForm.nome.trim(),
+          documento: createForm.documentoo.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -145,20 +145,20 @@ export default function Condominios() {
 
   const openEdit = (condo: CondoItem) => {
     setEditingCondo(condo);
-    setEditForm({ name: condo.condo_name, document: '' });
+    setEditForm({ nome: condo.condominio_nome, documento: '' });
     setEditOpen(true);
   };
 
   const handleEdit = async () => {
-    if (!editingCondo || !editForm.name.trim()) {
+    if (!editingCondo || !editForm.nome.trim()) {
       toast({ title: 'Nome é obrigatório', variant: 'destructive' });
       return;
     }
     setSaving(true);
     try {
-      const res = await apiFetch(`/api/condominios/${editingCondo.condo_id}/`, {
+      const res = await apiFetch(`/api/condominios/${editingCondo.condominio_id}/atualizar/`, {
         method: 'PATCH',
-        body: JSON.stringify({ name: editForm.name.trim() }),
+        body: JSON.stringify({ nome: editForm.nome.trim() }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -169,7 +169,7 @@ export default function Condominios() {
       setEditingCondo(null);
       await fetchCondos();
       // Refresh context if we edited the active condo
-      if (editingCondo.condo_id === condoId) await refresh();
+      if (editingCondo.condominio_id === condoId) await refresh();
     } catch (err: any) {
       toast({ title: 'Erro ao atualizar condomínio', description: err.message, variant: 'destructive' });
     }
@@ -179,14 +179,14 @@ export default function Condominios() {
   // ── Switch ──────────────────────────────────────────────────────────────────
 
   const handleSwitch = async (condo: CondoItem) => {
-    if (condo.condo_id === condoId) return;
+    if (condo.condominio_id === condoId) return;
     setSwitchConfirm(null);
-    setSwitching(condo.condo_id);
-    const success = await switchCondo(condo.condo_id);
+    setSwitching(condo.condominio_id);
+    const success = await switchCondo(condo.condominio_id);
     if (!success) {
       toast({ title: 'Erro ao trocar condomínio', variant: 'destructive' });
     } else {
-      toast({ title: `Condomínio ativo: ${condo.condo_name}` });
+      toast({ title: `Condomínio ativo: ${condo.condominio_nome}` });
       await fetchCondos();
     }
     setSwitching(null);
@@ -241,11 +241,11 @@ export default function Condominios() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {condos.map((condo) => {
-            const isActive = condo.condo_id === condoId;
-            const isSwitching = switching === condo.condo_id;
+            const isActive = condo.condominio_id === condoId;
+            const isSwitching = switching === condo.condominio_id;
             return (
               <Card
-                key={condo.condo_id}
+                key={condo.condominio_id}
                 className={`relative overflow-hidden transition-all ${
                   isActive ? 'border-primary/40 shadow-md shadow-primary/10' : 'hover:border-border'
                 }`}
@@ -265,7 +265,7 @@ export default function Condominios() {
                       </div>
                       <div className="min-w-0">
                         <CardTitle className="text-sm font-semibold text-foreground truncate">
-                          {condo.condo_name}
+                          {condo.condominio_nome}
                         </CardTitle>
                         {isActive && (
                           <span className="text-[10px] text-primary font-medium">● Ativo</span>
@@ -275,10 +275,10 @@ export default function Condominios() {
                     <Badge
                       variant="outline"
                       className={`text-[10px] shrink-0 ${
-                        ROLE_COLORS[condo.role] ?? 'bg-muted/40 text-muted-foreground border-border'
+                        ROLE_COLORS[condo.papel] ?? 'bg-muted/40 text-muted-foreground border-border'
                       }`}
                     >
-                      {ROLE_LABELS[condo.role] ?? condo.role}
+                      {ROLE_LABELS[condo.papel] ?? condo.papel}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -313,7 +313,7 @@ export default function Condominios() {
                       size="sm"
                       variant="ghost"
                       className="gap-1.5 text-xs h-8"
-                      onClick={() => setInviteCondoId(condo.condo_id)}
+                      onClick={() => setInviteCondoId(condo.condominio_id)}
                     >
                       <Link2 className="h-3 w-3" />
                       Convite
@@ -344,8 +344,8 @@ export default function Condominios() {
               <Input
                 id="create-name"
                 placeholder="Ex: Residencial Flores"
-                value={createForm.name}
-                onChange={(e) => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                value={createForm.nome}
+                onChange={(e) => setCreateForm(f => ({ ...f, nome: e.target.value }))}
                 disabled={creating}
               />
             </div>
@@ -354,8 +354,8 @@ export default function Condominios() {
               <Input
                 id="create-doc"
                 placeholder="00.000.000/0000-00"
-                value={createForm.document}
-                onChange={(e) => setCreateForm(f => ({ ...f, document: e.target.value }))}
+                value={createForm.documento}
+                onChange={(e) => setCreateForm(f => ({ ...f, documento: e.target.value }))}
                 disabled={creating}
               />
             </div>
@@ -364,7 +364,7 @@ export default function Condominios() {
             <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={creating}>
               Cancelar
             </Button>
-            <Button onClick={handleCreate} disabled={creating || !createForm.name.trim()}>
+            <Button onClick={handleCreate} disabled={creating || !createForm.nome.trim()}>
               {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Criar Condomínio
             </Button>
@@ -381,7 +381,7 @@ export default function Condominios() {
               Editar Condomínio
             </DialogTitle>
             <DialogDescription>
-              Atualize o nome do condomínio <strong>{editingCondo?.condo_name}</strong>.
+              Atualize o nome do condomínio <strong>{editingCondo?.condominio_nome}</strong>.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -390,8 +390,8 @@ export default function Condominios() {
               <Input
                 id="edit-name"
                 placeholder="Ex: Residencial Flores"
-                value={editForm.name}
-                onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
+                value={editForm.nome}
+                onChange={(e) => setEditForm(f => ({ ...f, nome: e.target.value }))}
                 disabled={saving}
               />
             </div>
@@ -400,7 +400,7 @@ export default function Condominios() {
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>
               Cancelar
             </Button>
-            <Button onClick={handleEdit} disabled={saving || !editForm.name.trim()}>
+            <Button onClick={handleEdit} disabled={saving || !editForm.nome.trim()}>
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Salvar
             </Button>
@@ -415,7 +415,7 @@ export default function Condominios() {
             <AlertDialogTitle>Trocar condomínio ativo?</AlertDialogTitle>
             <AlertDialogDescription>
               Você será redirecionado para o contexto de{' '}
-              <strong>{switchConfirm?.condo_name}</strong>. Todas as telas passarão a exibir os dados deste condomínio.
+              <strong>{switchConfirm?.condominio_nome}</strong>. Todas as telas passarão a exibir os dados deste condomínio.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -3,22 +3,23 @@ import { apiFetch } from '@/lib/api';
 
 export interface FinancialConfig {
   id?: string;
-  condo_id: string;
+  condominio_id: string;
   alcada_1_limite: number | null;
   alcada_2_limite: number | null;
   alcada_3_limite: number | null;
-  approval_deadline_hours: number | null;
-  notify_residents_above: number | null;
-  monthly_limit_manutencao: number | null;
-  monthly_limit_limpeza: number | null;
-  monthly_limit_seguranca: number | null;
-  annual_budget: number | null; // usado como orçamento mensal
-  annual_budget_alert_pct: number | null;
+  prazo_aprovacao_horas: number | null;
+  notificar_moradores_acima: number | null;
+  limite_mensal_manutencao: number | null;
+  limite_mensal_limpeza: number | null;
+  limite_mensal_seguranca: number | null;
+  orcamento_mensal: number | null;
+  orcamento_anual: number | null;
+  alerta_orcamento_pct: number | null;
 }
 
-/** Alias semântico: annual_budget armazena o orçamento mensal */
+/** Alias semântico: orcamento_mensal armazena o orçamento mensal */
 export function getMonthlyBudget(config: FinancialConfig | null): number | null {
-  return config?.annual_budget ?? null;
+  return config?.orcamento_mensal ?? null;
 }
 
 export function useFinancialConfig(condoId: string | null) {
@@ -90,9 +91,9 @@ export type CategoryKey = 'manutencao' | 'limpeza' | 'seguranca';
 export function getMonthlyLimit(config: FinancialConfig | null, category: CategoryKey): number | null {
   if (!config) return null;
   switch (category) {
-    case 'manutencao': return config.monthly_limit_manutencao;
-    case 'limpeza': return config.monthly_limit_limpeza;
-    case 'seguranca': return config.monthly_limit_seguranca;
+    case 'manutencao': return config.limite_mensal_manutencao;
+    case 'limpeza': return config.limite_mensal_limpeza;
+    case 'seguranca': return config.limite_mensal_seguranca;
     default: return null;
   }
 }

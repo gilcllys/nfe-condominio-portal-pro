@@ -21,11 +21,11 @@ export async function logActivity({ condoId, action, entity, entityId, descripti
     await apiFetch('/api/logs-atividade/', {
       method: 'POST',
       body: JSON.stringify({
-        condo_id: condoId,
-        action,
-        entity,
-        entity_id: entityId,
-        description,
+        condominio_id: condoId,
+        acao: action,
+        entidade: entity,
+        entidade_id: entityId,
+        descricao: description,
       }),
     });
   } catch (err) {

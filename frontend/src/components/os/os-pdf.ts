@@ -5,37 +5,37 @@ import { ptBR } from 'date-fns/locale';
 
 interface OSData {
   id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
+  titulo: string;
+  descricao: string | null;
+  localizacao: string | null;
   status: string;
-  priority: string | null;
-  created_at: string;
-  created_by: string;
-  executor_type: string | null;
-  executor_name: string | null;
-  execution_notes: string | null;
+  prioridade: string | null;
+  criado_em: string;
+  criado_por_id: string;
+  tipo_executor: string | null;
+  nome_executor: string | null;
+  notas_execucao: string | null;
 }
 
 interface Activity {
-  description: string | null;
-  activity_type: string;
-  created_at: string;
+  descricao: string | null;
+  tipo_atividade: string;
+  criado_em: string;
 }
 
 interface Material {
-  name: string;
-  quantity: number | null;
-  unit: string | null;
-  cost: number | null;
+  item_estoque_id: string;
+  quantidade: number | null;
+  unidade_medida: string | null;
+  notas: string | null;
 }
 
 interface Approval {
-  approver_role: string;
-  decision: string;
-  justification?: string | null;
-  responded_at?: string | null;
-  is_minerva?: boolean;
+  papel_aprovador: string;
+  decisao: string;
+  motivo_revisao?: string | null;
+  respondido_em?: string | null;
+  minerva?: boolean;
 }
 
 const statusLabel: Record<string, string> = {
@@ -73,9 +73,9 @@ const decisionLabel: Record<string, string> = {
 };
 
 interface PhotoWithUrl {
-  photo_type: string;
+  tipo_foto: string;
   signedUrl: string;
-  observation?: string | null;
+  observacao?: string | null;
 }
 
 export async function generateOSPdfBlob(
@@ -125,12 +125,12 @@ export async function generateOSPdfBlob(
   y += 7;
 
   const infoRows = [
-    ['Título', order.title],
+    ['Título', order.titulo],
     ['Status', statusLabel[order.status] ?? order.status],
-    ['Prioridade', priorityLabel[order.priority ?? ''] ?? '—'],
-    ['Executor', executorTypeLabel[order.executor_type ?? ''] ?? '—'],
-    ['Local', order.location ?? '—'],
-    ['Criada em', format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })],
+    ['Prioridade', priorityLabel[order.prioridade ?? ''] ?? '—'],
+    ['Executor', executorTypeLabel[order.tipo_executor ?? ''] ?? '—'],
+    ['Local', order.localizacao ?? '—'],
+    ['Criada em', format(new Date(order.criado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })],
   ];
 
   autoTable(doc, {
@@ -148,11 +148,11 @@ export async function generateOSPdfBlob(
   y = (doc as any).lastAutoTable.finalY + 6;
 
   // Description
-  if (order.description) {
+  if (order.descricao) {
     checkPageBreak(20);
     addText('DESCRIÇÃO', margin, y, { fontSize: 12, bold: true });
     y += 6;
-    const lines = doc.splitTextToSize(order.description, pageWidth - 2 * margin);
+    const lines = doc.splitTextToSize(order.descricao, pageWidth - 2 * margin);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(33, 37, 41);
@@ -161,11 +161,11 @@ export async function generateOSPdfBlob(
   }
 
   // Execution notes
-  if (order.execution_notes) {
+  if (order.notas_execucao) {
     checkPageBreak(20);
     addText('NOTAS DE EXECUÇÃO', margin, y, { fontSize: 12, bold: true });
     y += 6;
-    const lines = doc.splitTextToSize(order.execution_notes, pageWidth - 2 * margin);
+    const lines = doc.splitTextToSize(order.notas_execucao, pageWidth - 2 * margin);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.text(lines, margin, y);
@@ -179,18 +179,14 @@ export async function generateOSPdfBlob(
     y += 7;
 
     const matRows = materials.map((m) => [
-      m.name,
-      `${m.quantity ?? '—'} ${m.unit ?? ''}`.trim(),
-      m.cost != null ? `R$ ${m.cost.toFixed(2)}` : '—',
+      m.item_estoque_id,
+      `${m.quantidade ?? '—'} ${m.unidade_medida ?? ''}`.trim(),
+      m.notas ?? '—',
     ]);
-    const totalCost = materials.reduce((s, m) => s + (m.cost ?? 0), 0);
-    if (totalCost > 0) {
-      matRows.push(['Total', '', `R$ ${totalCost.toFixed(2)}`]);
-    }
 
     autoTable(doc, {
       startY: y,
-      head: [['Material', 'Qtde/Unidade', 'Custo']],
+      head: [['Material', 'Qtde/Unidade', 'Notas']],
       body: matRows,
       theme: 'grid',
       margin: { left: margin, right: margin },
@@ -207,10 +203,10 @@ export async function generateOSPdfBlob(
     y += 7;
 
     const approvalRows = approvals.map((a) => [
-      roleLabel[a.approver_role] ?? a.approver_role,
-      decisionLabel[a.decision] ?? a.decision,
-      a.justification ?? '—',
-      a.responded_at ? format(new Date(a.responded_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '—',
+      roleLabel[a.papel_aprovador] ?? a.papel_aprovador,
+      decisionLabel[a.decisao] ?? a.decisao,
+      a.motivo_revisao ?? '—',
+      a.respondido_em ? format(new Date(a.respondido_em), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '—',
     ]);
 
     autoTable(doc, {
@@ -233,8 +229,8 @@ export async function generateOSPdfBlob(
     y += 7;
 
     const timeRows = activities.map((a) => [
-      format(new Date(a.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
-      a.description ?? a.activity_type,
+      format(new Date(a.criado_em), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+      a.descricao ?? a.tipo_atividade,
     ]);
 
     autoTable(doc, {
@@ -251,8 +247,8 @@ export async function generateOSPdfBlob(
   }
 
   // Photos
-  const problemPhotos = photosWithUrls.filter((p) => p.photo_type === 'PROBLEMA');
-  const finalPhotos = photosWithUrls.filter((p) => p.photo_type === 'EXECUCAO_FINAL');
+  const problemPhotos = photosWithUrls.filter((p) => p.tipo_foto === 'PROBLEMA');
+  const finalPhotos = photosWithUrls.filter((p) => p.tipo_foto === 'EXECUCAO_FINAL');
 
   const addPhotoSection = async (title: string, items: PhotoWithUrl[]) => {
     if (items.length === 0) return;
@@ -273,17 +269,17 @@ export async function generateOSPdfBlob(
         checkPageBreak(imgHeight + 15);
         if (x + imgWidth > pageWidth - margin) {
           x = margin;
-          y += imgHeight + (photo.observation ? 12 : 5);
+          y += imgHeight + (photo.observacao ? 12 : 5);
           checkPageBreak(imgHeight + 15);
         }
 
         doc.addImage(base64, 'JPEG', x, y, imgWidth, imgHeight);
 
-        if (photo.observation) {
+        if (photo.observacao) {
           doc.setFontSize(7);
           doc.setTextColor(108, 117, 125);
           doc.setFont('helvetica', 'normal');
-          const obsLines = doc.splitTextToSize(photo.observation, imgWidth);
+          const obsLines = doc.splitTextToSize(photo.observacao, imgWidth);
           doc.text(obsLines, x, y + imgHeight + 3);
         }
 

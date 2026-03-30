@@ -279,19 +279,19 @@ export default function Moradores() {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((resident) => {
-                        const hasAccount = !!resident.matched_user_id;
+                        const hasAccount = !!resident.usuario_vinculado_id;
                         return (
-                          <TableRow key={resident.resident_id} className="group">
+                          <TableRow key={resident.id} className="group">
                             <TableCell className="font-medium py-3 px-4 text-foreground">
-                              {resident.full_name}
+                              {resident.nome_completo}
                             </TableCell>
                             <TableCell className="py-3 px-4">
-                              {resident.matched_role ? (
+                              {resident.papel_vinculado ? (
                                 <Badge
                                   variant="outline"
-                                  className={`badge-premium text-xs ${ROLE_COLORS[resident.matched_role] ?? 'bg-muted/40 text-muted-foreground border-border'}`}
+                                  className={`badge-premium text-xs ${ROLE_COLORS[resident.papel_vinculado] ?? 'bg-muted/40 text-muted-foreground border-border'}`}
                                 >
-                                  {ROLE_LABELS[resident.matched_role] ?? resident.matched_role}
+                                  {ROLE_LABELS[resident.papel_vinculado] ?? resident.papel_vinculado}
                                 </Badge>
                               ) : (
                                 <span className="text-muted-foreground/50 text-xs">—</span>
@@ -301,7 +301,7 @@ export default function Moradores() {
                               {resident.email ?? '—'}
                             </TableCell>
                             <TableCell className="py-3 px-4 text-muted-foreground text-sm">
-                              {resident.phone ?? '—'}
+                              {resident.telefone ?? '—'}
                             </TableCell>
                             <TableCell className="py-3 px-4 text-muted-foreground text-sm">
                               {formatAddress(resident)}
@@ -364,13 +364,12 @@ export default function Moradores() {
             <DialogDescription>{editingResident ? 'Atualize os dados do morador.' : 'Preencha os dados para cadastrar um novo morador.'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2 overflow-y-auto flex-1">
-            <div className="space-y-2"><Label htmlFor="full_name" className="text-sm font-medium text-foreground">Nome completo *</Label><Input id="full_name" className="premium-input" value={form.full_name} onChange={(e) => updateField('full_name', e.target.value)} /></div>
-            <div className="space-y-2"><Label htmlFor="document" className="text-sm font-medium text-foreground">Documento</Label><Input id="document" className="premium-input" value={form.document} onChange={(e) => updateField('document', e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="nome_completo" className="text-sm font-medium text-foreground">Nome completo *</Label><Input id="nome_completo" className="premium-input" value={form.nome_completo} onChange={(e) => updateField('nome_completo', e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="documento" className="text-sm font-medium text-foreground">Documento</Label><Input id="documento" className="premium-input" value={form.documento} onChange={(e) => updateField('documento', e.target.value)} /></div>
             <div className="space-y-2"><Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label><Input id="email" type="email" className="premium-input" value={form.email} onChange={(e) => updateField('email', e.target.value)} /></div>
-            <div className="space-y-2"><Label htmlFor="phone" className="text-sm font-medium text-foreground">Telefone</Label><Input id="phone" className="premium-input" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} /></div>
-            <div className="space-y-2"><Label htmlFor="block" className="text-sm font-medium text-foreground">Bloco (opcional)</Label><Input id="block" className="premium-input" placeholder="Ex: Bloco 26" value={form.block} onChange={(e) => updateField('block', e.target.value)} /></div>
-            <div className="space-y-2"><Label htmlFor="unit" className="text-sm font-medium text-foreground">Unidade / Apto / Casa (opcional)</Label><Input id="unit" className="premium-input" placeholder="Ex: Apto 203" value={form.unit} onChange={(e) => updateField('unit', e.target.value)} /></div>
-            <div className="space-y-2"><Label htmlFor="unit_label" className="text-sm font-medium text-foreground">Complemento (opcional)</Label><Input id="unit_label" className="premium-input" placeholder="Ex: Quadra B Lote 8" value={form.unit_label} onChange={(e) => updateField('unit_label', e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="telefone" className="text-sm font-medium text-foreground">Telefone</Label><Input id="telefone" className="premium-input" value={form.telefone} onChange={(e) => updateField('telefone', e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="bloco" className="text-sm font-medium text-foreground">Bloco (opcional)</Label><Input id="bloco" className="premium-input" placeholder="Ex: Bloco 26" value={form.bloco} onChange={(e) => updateField('bloco', e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="unidade_label" className="text-sm font-medium text-foreground">Unidade / Apto / Casa (opcional)</Label><Input id="unidade_label" className="premium-input" placeholder="Ex: Apto 203" value={form.unidade_label} onChange={(e) => updateField('unidade_label', e.target.value)} /></div>
           </div>
           <DialogFooter className="sticky bottom-0 bg-card pt-4 border-t border-border/50">
             <Button variant="outline" className="border-border/60" onClick={() => setModalOpen(false)}>Cancelar</Button>
@@ -384,7 +383,7 @@ export default function Moradores() {
         <DialogContent className="premium-card border-border">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">Excluir Morador</DialogTitle>
-            <DialogDescription>Tem certeza que deseja excluir <strong className="text-foreground">{deletingResident?.full_name}</strong>? Esta ação não pode ser desfeita.</DialogDescription>
+            <DialogDescription>Tem certeza que deseja excluir <strong className="text-foreground">{deletingResident?.nome_completo}</strong>? Esta ação não pode ser desfeita.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" className="border-border/60" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>

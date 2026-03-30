@@ -417,7 +417,7 @@ export default function Prestadores() {
               </div>
               <div className="space-y-2">
                 <Label>CEP</Label>
-                <Input value={form.zip_code} onChange={e => setForm(f => ({ ...f, zip_code: e.target.value }))} />
+                <Input value={form.cep} onChange={e => setForm(f => ({ ...f, cep: e.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Tipo de Serviço</Label>
@@ -451,11 +451,11 @@ export default function Prestadores() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              {detailProvider?.trade_name}
+              {detailProvider?.nome_fantasia}
             </DialogTitle>
             <DialogDescription>
-              {detailProvider?.legal_name && detailProvider.legal_name !== detailProvider.trade_name
-                ? detailProvider.legal_name
+              {detailProvider?.razao_social && detailProvider.razao_social !== detailProvider.nome_fantasia
+                ? detailProvider.razao_social
                 : 'Detalhes do prestador'}
             </DialogDescription>
           </DialogHeader>
@@ -464,10 +464,10 @@ export default function Prestadores() {
             <div className="space-y-6 py-2">
               {/* Info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
-                {detailProvider.document && (
-                  <div><span className="text-muted-foreground">CNPJ:</span> {detailProvider.document.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')}</div>
+                {detailProvider.documento && (
+                  <div><span className="text-muted-foreground">CNPJ:</span> {detailProvider.documento.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')}</div>
                 )}
-                {detailProvider.phone && <div><span className="text-muted-foreground">Telefone:</span> {detailProvider.phone}</div>}
+                {detailProvider.telefone && <div><span className="text-muted-foreground">Telefone:</span> {detailProvider.telefone}</div>}
                 {detailProvider.email && <div><span className="text-muted-foreground">Email:</span> {detailProvider.email}</div>}
                 {detailProvider.tipo_servico && <div><span className="text-muted-foreground">Serviço:</span> {detailProvider.tipo_servico}</div>}
                 {detailProvider.cidade && <div><span className="text-muted-foreground">Cidade:</span> {detailProvider.cidade}/{detailProvider.estado}</div>}
@@ -490,7 +490,7 @@ export default function Prestadores() {
                     size="sm"
                     variant="outline"
                     onClick={handleAnalyzeRisk}
-                    disabled={analyzingRisk || !detailProvider.document}
+                    disabled={analyzingRisk || !detailProvider.documento}
                   >
                     {analyzingRisk ? (
                       <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Analisando...</>
@@ -579,7 +579,7 @@ export default function Prestadores() {
 
                 {!riskAnalysis && !analyzingRisk && (
                   <p className="text-sm text-muted-foreground">
-                    {detailProvider.document
+                    {detailProvider.documento
                       ? 'Nenhuma análise realizada. Clique em "Analisar Risco" para gerar o relatório.'
                       : 'Cadastre o CNPJ do prestador para habilitar a análise de risco.'}
                   </p>

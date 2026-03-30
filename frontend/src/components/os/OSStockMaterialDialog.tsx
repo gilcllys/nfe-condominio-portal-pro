@@ -89,11 +89,11 @@ export function OSStockMaterialDialog({ open, onOpenChange, orderId, onAdded }: 
       const matRes = await apiFetch('/api/materiais-os/', {
         method: 'POST',
         body: JSON.stringify({
-          service_order_id: orderId,
-          name: selectedItem!.name,
-          quantity: qty,
-          unit: selectedItem!.unit,
-          cost: null,
+          ordem_servico_id: orderId,
+          item_estoque_id: selectedItemId,
+          quantidade: qty,
+          unidade_medida: selectedItem!.unit,
+          notas: null,
         }),
       });
 
@@ -110,11 +110,11 @@ export function OSStockMaterialDialog({ open, onOpenChange, orderId, onAdded }: 
       const moveRes = await apiFetch('/api/movimentacoes-estoque/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
+          condominio_id: condoId,
           item_id: selectedItemId,
           move_type: STOCK_MOVE_TYPES.SAIDA,
           qty,
-          service_order_id: orderId,
+          ordem_servico_id: orderId,
           service_order_material_id: matData.id,
         }),
       });

@@ -12,16 +12,15 @@ import { logActivity } from '@/lib/activity-log';
 
 interface PendingUser {
   id: string;
-  full_name: string;
+  nome_completo: string;
   email: string;
-  document: string | null;
-  document_type: string | null;
-  birth_date: string | null;
-  created_at: string;
+  cpf: string | null;
+  data_nascimento: string | null;
+  criado_em: string;
   // from residents join
-  block: string | null;
-  unit: string | null;
-  unit_label: string | null;
+  bloco: string | null;
+  unidade: string | null;
+  unidade_label: string | null;
 }
 
 interface PendingApprovalsTabProps {
@@ -57,16 +56,15 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
       }
 
       const enriched: PendingUser[] = rows.map((row: any) => ({
-        id: row.user_id,
-        full_name: row.full_name,
+        id: row.usuario_id,
+        nome_completo: row.nome_completo,
         email: row.email,
-        document: row.cpf_rg ?? null,
-        document_type: null,
-        birth_date: row.birth_date,
-        created_at: row.created_at,
-        block: row.block ?? null,
-        unit: row.unit ?? null,
-        unit_label: row.unit_label ?? null,
+        cpf: row.cpf ?? null,
+        data_nascimento: row.data_nascimento,
+        criado_em: row.criado_em,
+        bloco: row.bloco ?? null,
+        unidade: row.unidade ?? null,
+        unidade_label: row.unidade_label ?? null,
       }));
 
       setUsers(enriched);
@@ -88,7 +86,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
       // Approve user via backend endpoint
       const approveRes = await apiFetch('/api/membros/aprovar/', {
         method: 'POST',
-        body: JSON.stringify({ user_id: user.id, condo_id: condoId }),
+        body: JSON.stringify({ usuario_id: user.id, condominio_id: condoId }),
       });
 
       if (!approveRes.ok) {
@@ -106,15 +104,14 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
         await apiFetch('/api/moradores/', {
           method: 'POST',
           body: JSON.stringify({
-            condo_id: condoId,
-            full_name: user.full_name,
+            condominio_id: condoId,
+            nome_completo: user.nome_completo,
             email: user.email.toLowerCase(),
-            block: user.block || null,
-            unit: user.unit || null,
-            unit_label: user.unit_label || null,
-            unit_id: null,
-            document: user.document || null,
-            phone: null,
+            bloco: user.bloco || null,
+            unidade: user.unidade || null,
+            unidade_label: user.unidade_label || null,
+            documento: user.cpf || null,
+            telefone: null,
           }),
         });
       }
@@ -124,10 +121,10 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
         action: 'update',
         entity: 'user',
         entityId: user.id,
-        description: `Acesso de "${user.full_name}" aprovado`,
+        description: `Acesso de "${user.nome_completo}" aprovado`,
       });
 
-      toast({ title: `Acesso de ${user.full_name} aprovado!` });
+      toast({ title: `Acesso de ${user.nome_completo} aprovado!` });
     } catch (err) {
       toast({ title: 'Erro ao aprovar', description: 'Tente novamente.', variant: 'destructive' });
     }
@@ -148,7 +145,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
     try {
       const res = await apiFetch('/api/membros/recusar/', {
         method: 'POST',
-        body: JSON.stringify({ user_id: rejectTarget.id, condo_id: condoId }),
+        body: JSON.stringify({ usuario_id: rejectTarget.id, condominio_id: condoId }),
       });
 
       if (!res.ok) {
@@ -175,7 +172,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
   };
 
   const formatAddress = (u: PendingUser) =>
-    [u.block, u.unit, u.unit_label].filter(Boolean).join(' · ') || '—';
+    [u.bloco, u.unidade, u.unidade_label].filter(Boolean).join(' · ') || '—';
 
   if (loading) {
     return <p className="text-sm text-muted-foreground text-center py-8">Carregando...</p>;
@@ -198,7 +195,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
             <CardContent className="pt-4 pb-4 space-y-2">
               <div className="flex items-start justify-between gap-2 flex-wrap">
                 <div>
-                  <p className="font-medium text-foreground">{user.full_name}</p>
+                  <p className="font-medium text-foreground">{user.nome_completo}</p>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
                 <Badge variant="outline" className="flex items-center gap-1">
@@ -208,12 +205,12 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">{user.document_type ?? 'Doc'}:</span>{' '}
-                  {user.document ?? '—'}
+                  <span className="text-muted-foreground">CPF:</span>{' '}
+                  {user.cpf ?? '—'}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Nascimento:</span>{' '}
-                  {user.birth_date ? new Date(user.birth_date).toLocaleDateString('pt-BR') : '—'}
+                  {user.data_nascimento ? new Date(user.data_nascimento).toLocaleDateString('pt-BR') : '—'}
                 </div>
                 <div>
                   <span className="text-muted-foreground">Endereço:</span>{' '}
@@ -221,7 +218,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
                 </div>
                 <div>
                   <span className="text-muted-foreground">Cadastrado em:</span>{' '}
-                  {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                  {new Date(user.criado_em).toLocaleDateString('pt-BR')}
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
@@ -257,7 +254,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
           <DialogHeader>
             <DialogTitle>Recusar cadastro</DialogTitle>
             <DialogDescription>
-              Informe o motivo da recusa do cadastro de <strong>{rejectTarget?.full_name}</strong>.
+              Informe o motivo da recusa do cadastro de <strong>{rejectTarget?.nome_completo}</strong>.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">

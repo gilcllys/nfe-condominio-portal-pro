@@ -12,26 +12,26 @@ interface ConfigFields {
   alcada_1_limite: string;
   alcada_2_limite: string;
   alcada_3_limite: string;
-  approval_deadline_hours: string;
-  notify_residents_above: string;
-  monthly_limit_manutencao: string;
-  monthly_limit_limpeza: string;
-  monthly_limit_seguranca: string;
-  annual_budget: string;
-  annual_budget_alert_pct: string;
+  prazo_aprovacao_horas: string;
+  notificar_moradores_acima: string;
+  limite_mensal_manutencao: string;
+  limite_mensal_limpeza: string;
+  limite_mensal_seguranca: string;
+  orcamento_mensal: string;
+  alerta_orcamento_pct: string;
 }
 
 const emptyFields: ConfigFields = {
   alcada_1_limite: '',
   alcada_2_limite: '',
   alcada_3_limite: '',
-  approval_deadline_hours: '48',
-  notify_residents_above: '',
-  monthly_limit_manutencao: '',
-  monthly_limit_limpeza: '',
-  monthly_limit_seguranca: '',
-  annual_budget: '',
-  annual_budget_alert_pct: '80',
+  prazo_aprovacao_horas: '48',
+  notificar_moradores_acima: '',
+  limite_mensal_manutencao: '',
+  limite_mensal_limpeza: '',
+  limite_mensal_seguranca: '',
+  orcamento_mensal: '',
+  alerta_orcamento_pct: '80',
 };
 
 export default function FinancialConfigSection() {
@@ -56,13 +56,13 @@ export default function FinancialConfigSection() {
             alcada_1_limite: data.alcada_1_limite?.toString() ?? '',
             alcada_2_limite: data.alcada_2_limite?.toString() ?? '',
             alcada_3_limite: data.alcada_3_limite?.toString() ?? '',
-            approval_deadline_hours: data.approval_deadline_hours?.toString() ?? '48',
-            notify_residents_above: data.notify_residents_above?.toString() ?? '',
-            monthly_limit_manutencao: data.monthly_limit_manutencao?.toString() ?? '',
-            monthly_limit_limpeza: data.monthly_limit_limpeza?.toString() ?? '',
-            monthly_limit_seguranca: data.monthly_limit_seguranca?.toString() ?? '',
-            annual_budget: data.annual_budget?.toString() ?? '',
-            annual_budget_alert_pct: data.annual_budget_alert_pct?.toString() ?? '80',
+            prazo_aprovacao_horas: data.prazo_aprovacao_horas?.toString() ?? '48',
+            notificar_moradores_acima: data.notificar_moradores_acima?.toString() ?? '',
+            limite_mensal_manutencao: data.limite_mensal_manutencao?.toString() ?? '',
+            limite_mensal_limpeza: data.limite_mensal_limpeza?.toString() ?? '',
+            limite_mensal_seguranca: data.limite_mensal_seguranca?.toString() ?? '',
+            orcamento_mensal: data.orcamento_mensal?.toString() ?? '',
+            alerta_orcamento_pct: data.alerta_orcamento_pct?.toString() ?? '80',
           });
         }
         setLoading(false);
@@ -79,17 +79,17 @@ export default function FinancialConfigSection() {
     setSaving(true);
 
     const payload = {
-      condo_id: condoId,
+      condominio_id: condoId,
       alcada_1_limite: num(fields.alcada_1_limite),
       alcada_2_limite: num(fields.alcada_2_limite),
       alcada_3_limite: num(fields.alcada_3_limite),
-      approval_deadline_hours: num(fields.approval_deadline_hours) ?? 48,
-      notify_residents_above: num(fields.notify_residents_above),
-      monthly_limit_manutencao: num(fields.monthly_limit_manutencao),
-      monthly_limit_limpeza: num(fields.monthly_limit_limpeza),
-      monthly_limit_seguranca: num(fields.monthly_limit_seguranca),
-      annual_budget: num(fields.annual_budget),
-      annual_budget_alert_pct: num(fields.annual_budget_alert_pct) ?? 80,
+      prazo_aprovacao_horas: num(fields.prazo_aprovacao_horas) ?? 48,
+      notificar_moradores_acima: num(fields.notificar_moradores_acima),
+      limite_mensal_manutencao: num(fields.limite_mensal_manutencao),
+      limite_mensal_limpeza: num(fields.limite_mensal_limpeza),
+      limite_mensal_seguranca: num(fields.limite_mensal_seguranca),
+      orcamento_mensal: num(fields.orcamento_mensal),
+      alerta_orcamento_pct: num(fields.alerta_orcamento_pct) ?? 80,
     };
 
     try {
@@ -193,11 +193,11 @@ export default function FinancialConfigSection() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Prazo de aprovação (horas)</Label>
-                  <Input type="number" min={1} value={fields.approval_deadline_hours} onChange={set('approval_deadline_hours')} />
+                  <Input type="number" min={1} value={fields.prazo_aprovacao_horas} onChange={set('prazo_aprovacao_horas')} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Notificar moradores acima de (R$)</Label>
-                  <Input type="number" min={0} step="0.01" value={fields.notify_residents_above} onChange={set('notify_residents_above')} placeholder="Ex: 5000" />
+                  <Input type="number" min={0} step="0.01" value={fields.notificar_moradores_acima} onChange={set('notificar_moradores_acima')} placeholder="Ex: 5000" />
                 </div>
               </div>
             </div>
@@ -208,15 +208,15 @@ export default function FinancialConfigSection() {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Manutenção (R$/mês)</Label>
-                  <Input type="number" min={0} step="0.01" value={fields.monthly_limit_manutencao} onChange={set('monthly_limit_manutencao')} placeholder="Sem limite" />
+                  <Input type="number" min={0} step="0.01" value={fields.limite_mensal_manutencao} onChange={set('limite_mensal_manutencao')} placeholder="Sem limite" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Limpeza (R$/mês)</Label>
-                  <Input type="number" min={0} step="0.01" value={fields.monthly_limit_limpeza} onChange={set('monthly_limit_limpeza')} placeholder="Sem limite" />
+                  <Input type="number" min={0} step="0.01" value={fields.limite_mensal_limpeza} onChange={set('limite_mensal_limpeza')} placeholder="Sem limite" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Segurança (R$/mês)</Label>
-                  <Input type="number" min={0} step="0.01" value={fields.monthly_limit_seguranca} onChange={set('monthly_limit_seguranca')} placeholder="Sem limite" />
+                  <Input type="number" min={0} step="0.01" value={fields.limite_mensal_seguranca} onChange={set('limite_mensal_seguranca')} placeholder="Sem limite" />
                 </div>
               </div>
             </div>
@@ -227,11 +227,11 @@ export default function FinancialConfigSection() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Orçamento mensal (R$)</Label>
-                  <Input type="number" min={0} step="0.01" value={fields.annual_budget} onChange={set('annual_budget')} placeholder="Ex: 10000" />
+                  <Input type="number" min={0} step="0.01" value={fields.orcamento_mensal} onChange={set('orcamento_mensal')} placeholder="Ex: 10000" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Alerta ao atingir (%)</Label>
-                  <Input type="number" min={1} max={100} value={fields.annual_budget_alert_pct} onChange={set('annual_budget_alert_pct')} />
+                  <Input type="number" min={1} max={100} value={fields.alerta_orcamento_pct} onChange={set('alerta_orcamento_pct')} />
                 </div>
               </div>
             </div>

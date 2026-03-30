@@ -126,7 +126,7 @@ export default function OrdensServico() {
       const data = await res.json();
       setProviders(Array.isArray(data) ? data : data.results ?? []);
     });
-    apiFetch(`/api/chamados/?condominio_id=${condoId}&status=ABERTO,EM_ANALISE&ordering=-created_at`).then(async (res) => {
+    apiFetch(`/api/chamados/?condominio_id=${condoId}&status__in=ABERTO,EM_ANALISE&ordering=-criado_em`).then(async (res) => {
       if (!res.ok) return;
       const data = await res.json();
       setTickets(Array.isArray(data) ? data : data.results ?? []);
@@ -139,15 +139,15 @@ export default function OrdensServico() {
     else setLoadingMore(true);
 
     const params = new URLSearchParams({
-      condo_id: condoId,
-      ordering: '-created_at',
+      condominio_id: condoId,
+      ordering: '-criado_em',
       offset: String(fromOffset),
-      limit: String(PAGE_SIZE),
+      limite: String(PAGE_SIZE),
     });
 
     // MORADOR: only see own OS
     if (isMorador && internalUserId) {
-      params.append('created_by', internalUserId);
+      params.append('criado_por', internalUserId);
     }
 
     try {
@@ -156,7 +156,7 @@ export default function OrdensServico() {
       const rawData = await res.json();
       const data = Array.isArray(rawData) ? rawData : rawData.results ?? [];
 
-      const ordersWithPhotos: ServiceOrder[] = data.map((o: any) => ({ ...o, photo_count: 0 }));
+      const ordersWithPhotos: ServiceOrder[] = data.map((o: any) => ({ ...o, contagem_fotos: o.contagem_fotos ?? 0 }));
 
       if (ordersWithPhotos.length > 0) {
         const ids = ordersWithPhotos.map((o) => o.id);
@@ -167,7 +167,7 @@ export default function OrdensServico() {
             const photoData = await photoRes.json();
             const count = photoData.count ?? (Array.isArray(photoData) ? photoData.length : 0);
             const order = ordersWithPhotos.find(o => o.id === soId);
-            if (order) order.photo_count = count;
+            if (order) order.contagem_fotos = count;
           }
         }
       }
@@ -195,13 +195,13 @@ export default function OrdensServico() {
   }, [condoId, internalUserId]);
 
   const filtered = orders.filter((o) =>
-    o.title.toLowerCase().includes(search.toLowerCase())
+    o.titulo.toLowerCase().includes(search.toLowerCase())
   );
 
   const openCreate = (prefilledTicketId?: string, prefilledTicketTitle?: string) => {
     setForm({
       ...emptyForm,
-      ticket_id: prefilledTicketId ?? '',
+      chamado_id: prefilledTicketId ?? '',
     });
     setPhotos([]);
     setModalOpen(true);
@@ -226,7 +226,7 @@ export default function OrdensServico() {
 
   const handleSave = async () => {
     if (!condoId || !user) return;
-    if (!form.title.trim()) {
+    if (!form.titulo.trim()) {
       toast({ title: 'Título é obrigatório', variant: 'destructive' });
       return;
     }
@@ -262,17 +262,17 @@ export default function OrdensServico() {
       const insertRes = await apiFetch('/api/ordens-servico/', {
         method: 'POST',
         body: JSON.stringify({
-          condo_id: condoId,
-          title: form.title.trim(),
-          description: form.description.trim() || null,
-          location: form.location.trim() || null,
-          priority: form.priority,
-          executor_type: form.executor_type,
+          condominio_id: condoId,
+          titulo: form.titulo.trim(),
+          descricao: form.descricao.trim() || null,
+          localizacao: form.localizacao.trim() || null,
+          prioridade: form.prioridade,
+          tipo_executor: form.tipo_executor,
           status: 'ABERTA',
-          created_by: internalUser.id,
-          is_emergency: form.priority === 'ALTA',
-          provider_id: form.provider_id || null,
-          ticket_id: form.ticket_id || null,
+          criado_por_id: internalUser.id,
+          emergencial: form.prioridade === 'ALTA',
+          fornecedor_id: form.fornecedor_id || null,
+          chamado_id: form.chamado_id || null,
         }),
       });
 
@@ -286,10 +286,10 @@ export default function OrdensServico() {
       const soId = inserted.id;
 
       // If converting from ticket, update ticket status
-      if (form.ticket_id) {
-        await apiFetch(`/api/chamados/${form.ticket_id}/`, {
+      if (form.chamado_id) {
+        await apiFetch(`/api/chamados/${form.chamado_id}/`, {
           method: 'PATCH',
-          body: JSON.stringify({ status: 'VIROU_OS', service_order_id: soId }),
+          body: JSON.stringify({ status: 'VIROU_OS', ordem_servico_id: soId }),
         });
       }
 
@@ -305,7 +305,7 @@ export default function OrdensServico() {
         if (uploadRes.ok) {
           await apiFetch(`/api/ordens-servico/${soId}/photos/`, {
             method: 'POST',
-            body: JSON.stringify({ service_order_id: soId, photo_type: 'PROBLEMA', file_url: path, observation: form.photo_observation || null }),
+            body: JSON.stringify({ ordem_servico_id: soId, tipo_foto: 'PROBLEMA', url_arquivo: path, observacao: form.photo_observation || null }),
           });
         }
       }
@@ -320,7 +320,7 @@ export default function OrdensServico() {
         action: 'create',
         entity: 'service_order',
         entityId: soId,
-        description: `Ordem de serviço "${form.title.trim()}" criada`,
+        description: `Ordem de serviço "${form.titulo.trim()}" criada`,
       });
 
       toast({ title: 'Ordem de serviço criada com sucesso' });
@@ -405,8 +405,8 @@ export default function OrdensServico() {
                       <TableRow key={order.id} className="cursor-pointer" onClick={() => navigate(`/ordens-servico/${order.id}`)}>
                         <TableCell className="font-medium">
                           <span className="flex items-center gap-2">
-                            {order.title}
-                            {order.is_emergency && (
+                            {order.titulo}
+                            {order.emergencial && (
                               <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                                 <AlertTriangle className="h-3 w-3 mr-0.5" />
                                 Emergencial
@@ -419,15 +419,15 @@ export default function OrdensServico() {
                             {statusLabel[order.status] ?? order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{priorityLabel[order.priority ?? ''] ?? order.priority ?? '—'}</TableCell>
+                        <TableCell>{priorityLabel[order.prioridade ?? ''] ?? order.prioridade ?? '—'}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Image className="h-3 w-3" />
-                            <span className="text-sm">{order.photo_count}</span>
+                            <span className="text-sm">{order.contagem_fotos}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: ptBR })}
+                          {formatDistanceToNow(new Date(order.criado_em), { addSuffix: true, locale: ptBR })}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -466,20 +466,20 @@ export default function OrdensServico() {
           <div className="space-y-4 py-2 overflow-y-auto flex-1">
             <div className="space-y-2">
               <Label htmlFor="so_title">Título *</Label>
-              <Input id="so_title" value={form.title} onChange={(e) => updateField('title', e.target.value)} />
+              <Input id="so_title" value={form.titulo} onChange={(e) => updateField('titulo', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="so_description">Descrição</Label>
-              <Textarea id="so_description" value={form.description} onChange={(e) => updateField('description', e.target.value)} />
+              <Textarea id="so_description" value={form.descricao} onChange={(e) => updateField('descricao', e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="so_location">Local do problema</Label>
-              <Input id="so_location" placeholder="Ex: Bloco A, 2º andar" value={form.location} onChange={(e) => updateField('location', e.target.value)} />
+              <Input id="so_location" placeholder="Ex: Bloco A, 2º andar" value={form.localizacao} onChange={(e) => updateField('localizacao', e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Prioridade *</Label>
-                <Select value={form.priority} onValueChange={(v) => updateField('priority', v)}>
+                <Select value={form.prioridade} onValueChange={(v) => updateField('prioridade', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="BAIXA">Baixa</SelectItem>
@@ -489,7 +489,7 @@ export default function OrdensServico() {
               </div>
               <div className="space-y-2">
                 <Label>Executor *</Label>
-                <Select value={form.executor_type} onValueChange={(v) => updateField('executor_type', v)}>
+                <Select value={form.tipo_executor} onValueChange={(v) => updateField('tipo_executor', v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PRESTADOR_EXTERNO">Prestador Externo</SelectItem>
@@ -500,19 +500,19 @@ export default function OrdensServico() {
             </div>
             <div className="space-y-2">
               <Label>Prestador de Serviço</Label>
-              <Select value={form.provider_id} onValueChange={(v) => setForm(prev => ({ ...prev, provider_id: v }))}>
+              <Select value={form.fornecedor_id} onValueChange={(v) => setForm(prev => ({ ...prev, fornecedor_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
                 <SelectContent>
-                  {providers.map(p => <SelectItem key={p.id} value={p.id}>{p.trade_name}</SelectItem>)}
+                  {providers.map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Chamado de origem</Label>
-              <Select value={form.ticket_id} onValueChange={(v) => setForm(prev => ({ ...prev, ticket_id: v }))}>
+              <Select value={form.chamado_id} onValueChange={(v) => setForm(prev => ({ ...prev, chamado_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
                 <SelectContent>
-                  {tickets.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                  {tickets.map(t => <SelectItem key={t.id} value={t.id}>{t.titulo}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

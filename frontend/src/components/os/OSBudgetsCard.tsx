@@ -16,12 +16,12 @@ import { DollarSign, Plus, Send, Trash2, FileText, Calendar } from 'lucide-react
 
 interface Budget {
   id: string;
-  provider_id: string | null;
-  description: string | null;
-  total_value: number;
+  fornecedor_id: string | null;
+  descricao: string | null;
+  valor_total: number;
   status: string | null;
-  valid_until: string | null;
-  created_at: string;
+  valido_ate: string | null;
+  criado_em: string;
 }
 
 interface Provider {
@@ -71,7 +71,7 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
 
   const fetchBudgets = async () => {
     setLoading(true);
-    const res = await apiFetch(`/api/orcamentos/?service_order_id=${orderId}&ordering=created_at`);
+    const res = await apiFetch(`/api/orcamentos/?ordem_servico_id=${orderId}&ordering=criado_em`);
     const json = await res.json();
     setBudgets(json.results ?? json ?? []);
     setLoading(false);
@@ -133,14 +133,14 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
     }
 
     const insertPayload = {
-      service_order_id: orderId,
-      condo_id: condoId,
-      provider_id: form.provider_id || null,
-      description: form.description.trim(),
-      total_value: parseFloat(form.amount),
+      ordem_servico_id: orderId,
+      condominio_id: condoId,
+      fornecedor_id: form.provider_id || null,
+      descricao: form.description.trim(),
+      valor_total: parseFloat(form.amount),
       status: 'pendente',
-      valid_until: form.valid_until || null,
-      created_by_user_id: nfeUserId,
+      valido_ate: form.valid_until || null,
+      criado_por_id: nfeUserId,
     };
 
     const res = await apiFetch('/api/orcamentos/', {
@@ -199,17 +199,17 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
     const expiresAt = new Date(Date.now() + deadlineHours * 60 * 60 * 1000).toISOString();
 
     const approvalRecords = approvers.map((a: any) => ({
-      service_order_id: orderId,
-      condo_id: condoId,
-      approver_id: a.user_id,
-      approver_role: a.role,
-      approval_type: 'ORCAMENTO',
-      decision: 'pendente',
-      expires_at: expiresAt,
+      ordem_servico_id: orderId,
+      condominio_id: condoId,
+      aprovador_id: a.user_id,
+      papel_aprovador: a.role,
+      tipo_aprovacao: 'ORCAMENTO',
+      decisao: 'pendente',
+      expira_em: expiresAt,
     }));
 
     // Delete any existing budget approvals before inserting (idempotent re-submission)
-    await apiFetch(`/api/aprovacoes/?service_order_id=${orderId}&approval_type=ORCAMENTO`, {
+    await apiFetch(`/api/aprovacoes/?ordem_servico_id=${orderId}&tipo_aprovacao=ORCAMENTO`, {
       method: 'DELETE',
     });
 
@@ -292,21 +292,21 @@ export function OSBudgetsCard({ orderId, orderTitle, condoId, priority, executor
                   <div className="space-y-1 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium text-foreground">
-                        {i + 1}. {providers.find(p => p.id === b.provider_id)?.trade_name ?? 'Prestador'}
+                        {i + 1}. {providers.find(p => p.id === b.fornecedor_id)?.trade_name ?? 'Prestador'}
                       </span>
                       <Badge variant="secondary" className="text-xs">
-                        R$ {b.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        R$ {b.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </Badge>
                       <Badge variant={st.variant} className="text-xs">{st.label}</Badge>
                     </div>
-                    {b.description && (
-                      <p className="text-xs text-muted-foreground truncate">{b.description}</p>
+                    {b.descricao && (
+                      <p className="text-xs text-muted-foreground truncate">{b.descricao}</p>
                     )}
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      {b.valid_until && (
+                      {b.valido_ate && (
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          Válido até {new Date(b.valid_until).toLocaleDateString('pt-BR')}
+                          Válido até {new Date(b.valido_ate).toLocaleDateString('pt-BR')}
                         </span>
                       )}
                     </div>

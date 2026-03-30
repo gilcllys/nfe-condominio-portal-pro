@@ -27,8 +27,8 @@ export default function InviteLinkDialog({ open, onOpenChange, condoId }: Invite
       const condoRes = await apiFetch(`/api/condominios/${condoId}/`);
       if (condoRes.ok) {
         const data = await condoRes.json();
-        setInviteCode(data.invite_code ?? null);
-        setInviteActive(data.invite_active ?? false);
+        setInviteCode(data.codigo_convite ?? null);
+        setInviteActive(data.convite_ativo ?? false);
       }
     } catch {
       // ignore
@@ -43,23 +43,21 @@ export default function InviteLinkDialog({ open, onOpenChange, condoId }: Invite
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await apiFetch('/api/condos/invite/generate/', {
-        method: 'POST',
-        body: JSON.stringify({ condoId }),
+      // TODO: No dedicated invite generation endpoint exists yet.
+      // The /api/condominios/{id}/atualizar/ endpoint does not allow convite_ativo.
+      // A backend endpoint for invite code generation/activation needs to be created.
+      const res = await apiFetch(`/api/condominios/${condoId}/atualizar/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ convite_ativo: true }),
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         toast({ title: 'Erro ao gerar link', description: errData.error || 'Tente novamente.', variant: 'destructive' });
       } else {
-        const data = await res.json();
-        if (data.invite_code) {
-          setInviteCode(data.invite_code);
-          setInviteActive(true);
-          toast({ title: 'Link de convite gerado!' });
-        } else {
-          toast({ title: 'Erro ao confirmar gravação', description: 'O código não foi salvo corretamente.', variant: 'destructive' });
-        }
+        // Refetch to get the generated invite code
+        await fetchCurrent();
+        toast({ title: 'Link de convite gerado!' });
       }
     } catch {
       toast({ title: 'Erro ao gerar link', description: 'Tente novamente.', variant: 'destructive' });
@@ -69,9 +67,12 @@ export default function InviteLinkDialog({ open, onOpenChange, condoId }: Invite
 
   const handleDeactivate = async () => {
     try {
-      const res = await apiFetch('/api/condos/invite/generate/', {
-        method: 'POST',
-        body: JSON.stringify({ condoId, action: 'deactivate' }),
+      // TODO: No dedicated invite deactivation endpoint exists yet.
+      // The /api/condominios/{id}/atualizar/ endpoint does not allow convite_ativo.
+      // A backend endpoint for invite code deactivation needs to be created.
+      const res = await apiFetch(`/api/condominios/${condoId}/atualizar/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ convite_ativo: false }),
       });
 
       if (!res.ok) {

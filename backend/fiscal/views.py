@@ -1,5 +1,6 @@
 from django.db.models import Sum
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -57,6 +58,14 @@ class DocumentoFiscalViewSet(
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["get"])
+    def items(self, request, pk=None):
+        """Return line items for a fiscal document."""
+        documento = self.get_object()
+        itens = ItemDocFiscal.objects.filter(documento_fiscal=documento)
+        serializer = ItemDocFiscalSerializer(itens, many=True)
+        return Response(serializer.data)
+
 
 class AprovacaoDocFiscalViewSet(CondominioViewMixin, viewsets.ModelViewSet):
     serializer_class = AprovacaoDocFiscalSerializer
@@ -108,6 +117,18 @@ class AprovacaoDocFiscalViewSet(CondominioViewMixin, viewsets.ModelViewSet):
             )
             criados.append(str(a.id))
         return Response({"ids": criados}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["post"], url_path="bulk")
+    def bulk_create(self, request):
+        """Create multiple fiscal document approvals at once."""
+        items = request.data if isinstance(request.data, list) else request.data.get("items", [])
+        created = []
+        for item_data in items:
+            serializer = self.get_serializer(data=item_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            created.append(serializer.data)
+        return Response(created, status=status.HTTP_201_CREATED)
 
 
 class ItemDocFiscalViewSet(
