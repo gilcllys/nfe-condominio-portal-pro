@@ -1,5 +1,6 @@
 import { authApi, getStoredTokens } from '@/lib/api';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthUser {
   id: string;
@@ -27,6 +28,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<{ user: AuthUser; access: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Intercept recovery tokens in the URL hash and redirect to /reset-password
@@ -70,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try { localStorage.removeItem('nfe_vigia_active_condo'); } catch {}
     await authApi.logout();
     setSession(null);
+    navigate('/login', { replace: true });
   };
 
   return (

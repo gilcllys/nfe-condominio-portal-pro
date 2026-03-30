@@ -166,6 +166,9 @@ class OrcamentoViewSet(CondominioViewMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         extra = {}
+        condominio_id = self.get_condominio_id()
+        if condominio_id:
+            extra["condominio_id"] = condominio_id
         if not self.request.data.get("criado_por_id"):
             extra["criado_por"] = self.request.user
         serializer.save(**extra)

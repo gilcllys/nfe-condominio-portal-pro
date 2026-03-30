@@ -141,13 +141,23 @@ class CondominioViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
     @action(detail=True, methods=["patch"], url_path="atualizar")
     def atualizar_condominio(self, request, pk=None):
-        campos_permitidos = ["nome", "documento", "endereco", "cidade", "estado", "cep", "telefone", "email"]
+        campos_permitidos = [
+            "nome", "documento", "endereco", "cidade", "estado",
+            "cep", "telefone", "email", "convite_ativo",
+        ]
         atualizacoes = {k: v for k, v in request.data.items() if k in campos_permitidos}
         if not atualizacoes:
             return Response(
                 {"error": "Nenhum campo para atualizar"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Auto-gerar codigo_convite quando ativar convites
+        if atualizacoes.get("convite_ativo") is True:
+            condo = Condominio.objects.filter(id=pk).first()
+            if condo and not condo.codigo_convite:
+                atualizacoes["codigo_convite"] = secrets.token_urlsafe(16)
+
         Condominio.objects.filter(id=pk).update(**atualizacoes)
         return Response({"success": True})
 
@@ -273,7 +283,7 @@ class MembroCondominioViewSet(
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        qs = MembroCondominio.objects.all()
+        qs = MembroCondominio.objects.select_related("usuario").all()
         usuario_id = self.request.query_params.get("usuario_id")
         condominio_id = self.request.query_params.get("condominio_id")
         status_filtro = self.request.query_params.get("status")
@@ -288,6 +298,44 @@ class MembroCondominioViewSet(
         if papel_in:
             qs = qs.filter(papel__in=papel_in.split(","))
         return qs
+
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        condominio_id = request.query_params.get("condominio_id")
+
+        # Buscar moradores do condominio para enriquecer com dados de endereco
+        moradores_por_email = {}
+        if condominio_id:
+            from moradores.models import Morador
+
+            for m in Morador.objects.filter(condominio_id=condominio_id):
+                if m.email:
+                    moradores_por_email[m.email.lower()] = m
+
+        resultado = []
+        for membro in qs:
+            usuario = membro.usuario
+            linha = MembroCondominioSerializer(membro).data
+
+            # Dados do usuario
+            linha["nome_completo"] = usuario.nome_completo if usuario else None
+            linha["email"] = usuario.email if usuario else None
+            linha["cpf"] = getattr(usuario, "cpf", None) if usuario else None
+            linha["data_nascimento"] = (
+                str(usuario.data_nascimento) if usuario and usuario.data_nascimento else None
+            )
+
+            # Dados do morador (endereco)
+            morador = moradores_por_email.get(
+                usuario.email.lower() if usuario and usuario.email else ""
+            )
+            linha["bloco"] = morador.bloco if morador else None
+            linha["unidade"] = morador.unidade_label if morador else None
+            linha["unidade_label"] = morador.unidade_label if morador else None
+
+            resultado.append(linha)
+
+        return Response(resultado)
 
     @action(detail=False, methods=["post"], url_path="alterar-papel")
     def alterar_papel(self, request):
@@ -332,6 +380,30 @@ class MembroCondominioViewSet(
                 {"error": "usuario_id e condominio_id sao obrigatorios"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Nao permitir recusar a si mesmo
+        if str(request.user.id) == str(usuario_id):
+            return Response(
+                {"error": "Voce nao pode recusar sua propria conta"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Nao permitir recusar o unico sindico ativo do condominio
+        membro = MembroCondominio.objects.filter(
+            usuario_id=usuario_id, condominio_id=condominio_id
+        ).first()
+        if membro and membro.papel == MembroCondominio.Papel.SINDICO:
+            outros_sindicos = MembroCondominio.objects.filter(
+                condominio_id=condominio_id,
+                papel=MembroCondominio.Papel.SINDICO,
+                status=MembroCondominio.Status.ATIVO,
+            ).exclude(usuario_id=usuario_id).exists()
+            if not outros_sindicos:
+                return Response(
+                    {"error": "Nao e possivel recusar o unico sindico do condominio"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
         MembroCondominio.objects.filter(
             usuario_id=usuario_id, condominio_id=condominio_id
         ).update(status=MembroCondominio.Status.RECUSADO)
@@ -358,4 +430,8 @@ class LogAtividadeViewSet(
         return qs.order_by("-criado_em")[:limite]
 
     def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user)
+        extra = {"usuario": self.request.user}
+        condominio_id = self.get_condominio_id()
+        if condominio_id:
+            extra["condominio_id"] = condominio_id
+        serializer.save(**extra)

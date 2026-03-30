@@ -28,7 +28,10 @@ class ChamadoViewSet(CondominioViewMixin, viewsets.ModelViewSet):
         return qs.order_by("-criado_em")
 
     def perform_create(self, serializer):
-        if not serializer.validated_data.get("aberto_por"):
-            serializer.save(aberto_por=self.request.user)
-        else:
-            serializer.save()
+        extra = {}
+        condominio_id = self.get_condominio_id()
+        if condominio_id:
+            extra["condominio_id"] = condominio_id
+        if not serializer.validated_data.get("aberto_por_id"):
+            extra["aberto_por"] = self.request.user
+        serializer.save(**extra)

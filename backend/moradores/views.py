@@ -22,6 +22,13 @@ class MoradorViewSet(CondominioViewMixin, viewsets.ModelViewSet):
             qs = qs.filter(email__iexact=email)
         return qs.order_by("nome_completo")
 
+    def perform_create(self, serializer):
+        extra = {}
+        condominio_id = self.get_condominio_id()
+        if condominio_id:
+            extra["condominio_id"] = condominio_id
+        serializer.save(**extra)
+
     def list(self, request, *args, **kwargs):
         condominio_id = self.get_condominio_id()
         if not condominio_id:
@@ -63,3 +70,10 @@ class UnidadeViewSet(CondominioViewMixin, viewsets.ModelViewSet):
         return Unidade.objects.filter(
             condominio_id=condominio_id, excluido_em__isnull=True
         ).order_by("codigo")
+
+    def perform_create(self, serializer):
+        extra = {}
+        condominio_id = self.get_condominio_id()
+        if condominio_id:
+            extra["condominio_id"] = condominio_id
+        serializer.save(**extra)

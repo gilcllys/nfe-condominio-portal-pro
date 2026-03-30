@@ -42,7 +42,7 @@ export default function PendingApprovalsTab({ condoId }: PendingApprovalsTabProp
     console.log('[PendingApprovals] condoId usado na query:', condoId);
 
     try {
-      const res = await apiFetch(`/api/membros/?condominio_id=${condoId}`);
+      const res = await apiFetch(`/api/membros/?condominio_id=${condoId}&status=pendente`);
       const data = await res.json();
 
       console.log('[PendingApprovals] API resultado bruto:', data);
